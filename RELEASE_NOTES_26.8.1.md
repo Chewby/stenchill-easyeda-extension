@@ -11,6 +11,7 @@ Open a board, pick your settings, click once. The extension exports the paste an
 - **Follows the generation live.** A progress bar, the current step, and your position in the queue when the server is busy. A generation can take up to a minute on a dense board, and a window that does not move looks like a window that has crashed.
 - **Lets you stop.** The bottom button turns into Cancel while a generation runs, and cancelling actually closes the stream instead of leaving it to run in the background.
 - **Names the archive after your project and the time**, for example `torture-test_20260830_204126.zip`. You will regenerate the same board with a different thickness or a different nozzle, and each attempt should be recognisable rather than overwrite the last one.
+- **Speaks English and Simplified Chinese**, following whichever language EasyEDA Pro itself is set to. Every label, every help panel and every status message is translated; an entry it cannot find falls back to English rather than showing you a blank.
 - **Opens the result in 3D on stenchill.com**, with your exact settings carried along so the page shows the stencil you just saved and not a default one.
 
 ## Settings
@@ -31,7 +32,7 @@ Open a PCB and the menu appears under `Advanced` → `Stenchill`.
 
 ## What it needs
 
-**The EasyEDA Pro desktop client.** The web version is not supported: a browser enforces the cross-origin rule that the desktop client does not, so the call to stenchill.com is blocked there. Supporting it needs a change on the server side, which is not done yet.
+**The EasyEDA Pro desktop client.** The web version is not supported: a browser enforces the cross-origin rule that the desktop client does not, so the call to stenchill.com is blocked there. Supporting it needs two changes on the server side, neither of them done: the EasyEDA origin would have to be allowed, and so would the `X-API-Key` header the extension sends on every call.
 
 An internet connection. Generation runs on stenchill.com, and your Gerber files are not kept after it.
 
@@ -39,7 +40,6 @@ An internet connection. Generation runs on stenchill.com, and your Gerber files 
 
 - The EasyEDA export API this extension relies on is marked BETA by EasyEDA itself, and may change without notice.
 - The update check is in place but its server route is not live yet, so this version will never tell you a newer one exists. It fails silently by design rather than showing an error.
-- Interface text is English only for now.
 
 ## Links
 

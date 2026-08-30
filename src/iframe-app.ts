@@ -1,3 +1,4 @@
+import type { Dict } from './i18n';
 /**
  * The iframe page's code, and the extension's real orchestrator.
  *
@@ -9,8 +10,10 @@
  */
 import type { GenerationParams } from './params';
 import { API_KEY, ApiError, DEFAULT_BASE_URL, generateStencil } from './api-client';
+import { DICTS } from './dicts';
 import { exportPasteGerbers } from './exporter';
 import { stencilFileName } from './filename';
+import { localizeDocument, resolveDict, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
 import { clampParams, DEFAULT_PARAMS } from './params';
 import { shareStencil } from './share';
@@ -29,6 +32,34 @@ import { USER_AGENT } from './version';
  * turns BLANK without a word. Encountered on 2026-08-30. A blank page
  * cannot be diagnosed, so we make any error visible on screen.
  */
+/**
+ * The dictionary in force, English until the host answers.
+ *
+ * It is a mutable module binding and not a promise the callers await: every
+ * caller is an event handler, and making them all async to read a label would
+ * spread the wait through the whole file for a value that is settled long
+ * before the user can click anything.
+ */
+let dict: Dict = DICTS.en;
+
+/** Translates through the dictionary in force. */
+function t(text: string, ...args: ReadonlyArray<string | number>): string {
+	return translate(dict, text, ...args);
+}
+
+/**
+ * Applies the host's language to the page.
+ *
+ * The page is NOT hidden while this resolves, deliberately, and the tradeoff
+ * is the same one `applyTheme` already makes: a brief flash of English is a
+ * lesser evil than a dialog that could stay blank forever if the reveal never
+ * ran. English is also what a failure leaves on screen, which is readable.
+ */
+async function applyLanguage(): Promise<void> {
+	dict = await resolveDict(() => eda.sys_I18n.getCurrentLanguage(), DICTS);
+	localizeDocument(document, dict);
+}
+
 function showFatal(what: string, detail: unknown): void {
 	const box = document.createElement('pre');
 	box.style.cssText = 'white-space:pre-wrap;color:#ef6c6c;font:12px monospace;padding:12px';
@@ -36,8 +67,8 @@ function showFatal(what: string, detail: unknown): void {
 	document.body.prepend(box);
 }
 
-globalThis.addEventListener('error', event => showFatal('Script error', event.message));
-globalThis.addEventListener('unhandledrejection', event => showFatal('Unhandled rejection', event.reason));
+globalThis.addEventListener('error', event => showFatal(t('Script error'), event.message));
+globalThis.addEventListener('unhandledrejection', event => showFatal(t('Unhandled rejection'), event.reason));
 
 const SETTINGS_KEY = 'generationParams';
 
@@ -130,7 +161,7 @@ async function run(): Promise<void> {
 	el('result').style.display = 'none';
 	el('view').style.display = 'none';
 	el('bar').setAttribute('value', '0');
-	setStatus('Starting...');
+	setStatus(t('Starting...'));
 	// Reset to null on ENTRY: otherwise a failure would leave the previous
 	// generation's ZIP in place, and "View in 3D" would share that one.
 	lastZip = null;
@@ -144,7 +175,7 @@ async function run(): Promise<void> {
 		const params = readForm();
 		input('go').disabled = true;
 		input('reset').disabled = true;
-		setStatus('Exporting gerbers...');
+		setStatus(t('Exporting gerbers...'));
 		try {
 			await eda.sys_Storage.setExtensionUserConfig(SETTINGS_KEY, params);
 		}
@@ -167,10 +198,10 @@ async function run(): Promise<void> {
 			onProgress: (event) => {
 				el('bar').setAttribute('max', String(event.total));
 				el('bar').setAttribute('value', String(event.step));
-				setStatus(event.labelText || `Step ${event.step} of ${event.total}`);
+				setStatus(event.labelText || t('Step ${1} of ${2}', event.step, event.total));
 			},
 			onQueued: (event) => {
-				setStatus(`Waiting in queue: position ${event.position} of ${event.queueDepth}`);
+				setStatus(t('Waiting in queue: position ${1} of ${2}', event.position, event.queueDepth));
 			},
 			signal: controller.signal,
 		});
@@ -194,7 +225,7 @@ async function run(): Promise<void> {
 		el('result').style.display = 'block';
 		el('view').style.display = '';
 		el('resultText').className = 'ok';
-		el('resultText').textContent = `Saved as ${fileName}`;
+		el('resultText').textContent = t('Saved as ${1}', fileName);
 	}
 	catch (error) {
 		el('progress').style.display = 'none';
@@ -205,7 +236,7 @@ async function run(): Promise<void> {
 		if (!aborted) {
 			el('resultText').className = 'ko';
 			el('resultText').textContent
-				= error instanceof ApiError ? error.message : `Failed: ${String(error)}`;
+				= error instanceof ApiError ? error.message : t('Failed: ${1}', String(error));
 		}
 		setStatus('');
 	}
@@ -218,7 +249,7 @@ async function run(): Promise<void> {
 }
 
 el('go').addEventListener('click', () => {
-	run().catch(error => showFatal('Generate failed', error));
+	run().catch(error => showFatal(t('Generate failed'), error));
 });
 
 el('reset').addEventListener('click', () => writeForm(DEFAULT_PARAMS));
@@ -230,7 +261,11 @@ el('reset').addEventListener('click', () => writeForm(DEFAULT_PARAMS));
  * minute on a large board.
  */
 function setDismiss(label: 'Quit' | 'Cancel'): void {
-	el('quit').textContent = label;
+	// Le parametre reste la chaine ANGLAISE : c'est la cle du dictionnaire, et
+	// l'union de types la verrouille. Traduire au moment de l'affichage, jamais
+	// a l'appel, sinon la cle a traduire devient une variable et le garde de
+	// `tests/i18n.contract.test.ts` ne la voit plus.
+	el('quit').textContent = t(label);
 }
 
 el('quit').addEventListener('click', () => {
@@ -337,7 +372,7 @@ el('view').addEventListener('click', () => {
 		userAgent: USER_AGENT,
 	})
 		.then(openAndShow)
-		.catch(error => showFatal('Share failed', error))
+		.catch(error => showFatal(t('Share failed'), error))
 		.finally(() => { button.disabled = false; });
 });
 
@@ -365,6 +400,8 @@ async function applyTheme(): Promise<void> {
 }
 
 void applyTheme();
+
+void applyLanguage();
 
 void loadSettings().then(writeForm);
 

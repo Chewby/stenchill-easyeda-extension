@@ -13,6 +13,8 @@ First release.
   shows the one you saved.
 - Nine settings in three groups matching the website and the KiCad plugin, each
   with a help panel, remembered between runs.
+- Interface in English and Simplified Chinese, following EasyEDA Pro's own
+  language setting.
 
 Requires the EasyEDA Pro desktop client. See
 [RELEASE_NOTES_26.8.1.md](RELEASE_NOTES_26.8.1.md) for the details and the

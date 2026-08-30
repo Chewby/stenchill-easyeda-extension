@@ -7,6 +7,8 @@
  * `src/iframe-app.ts`.
  */
 import { DEFAULT_BASE_URL, fetchLatestVersion, isNewer } from './api-client';
+import { DICTS } from './dicts';
+import { resolveDict, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
 import { USER_AGENT, VERSION } from './version';
 
@@ -25,7 +27,8 @@ export function activate(): void {
 	void (async () => {
 		const latest = await fetchLatestVersion(fetch, DEFAULT_BASE_URL, USER_AGENT);
 		if (latest && isNewer(latest, VERSION)) {
-			eda.sys_Message.showToastMessage(`Stenchill ${latest} is available`);
+			const dict = await resolveDict(() => eda.sys_I18n.getCurrentLanguage(), DICTS);
+			eda.sys_Message.showToastMessage(translate(dict, 'Stenchill ${1} is available', latest));
 		}
 	})();
 }
@@ -34,9 +37,18 @@ export function openDialog(): void {
 	eda.sys_IFrame.openIFrame('/iframe/index.html', 555, 690, IFRAME_ID);
 }
 
+/**
+ * The About dialog.
+ *
+ * Only its TITLE goes through the dictionary: the body is a version number and
+ * a URL, and neither is language.
+ */
 export function about(): void {
-	eda.sys_Dialog.showInformationMessage(
-		`Stenchill ${VERSION}\nhttps://www.stenchill.com`,
-		'About',
-	);
+	void (async () => {
+		const dict = await resolveDict(() => eda.sys_I18n.getCurrentLanguage(), DICTS);
+		eda.sys_Dialog.showInformationMessage(
+			`Stenchill ${VERSION}\nhttps://www.stenchill.com`,
+			translate(dict, 'About'),
+		);
+	})();
 }
