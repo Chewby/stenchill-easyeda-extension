@@ -46,12 +46,12 @@ function codeStrings(): string[] {
 			found.push(m[1]);
 		for (const m of source.matchAll(/\btranslate\(dict, '((?:[^'\\]|\\.)*)'/g))
 			found.push(m[1]);
-		// L'unique indirection du fichier : `setDismiss` recoit la CLEF et la
-		// traduit elle-meme, pour que l'union de types verrouille les deux
-		// valeurs possibles. Son argument n'est donc pas un litteral de `t(...)`
-		// et le balayage ne le voit pas. Le nommer ici plutot que de faire
-		// semblant qu'il n'existe pas : sans cette ligne, 'Cancel' passait pour
-		// une entree morte, ce qu'il n'est pas.
+		// The file's only indirection: `setDismiss` receives the KEY and
+		// translates it itself, so that the type union locks the two possible
+		// values. Its argument is therefore not a `t(...)` literal and the sweep
+		// does not see it. We name it here rather than pretend it does not
+		// exist: without this line, 'Cancel' looked like a dead entry, which it
+		// is not.
 		for (const m of source.matchAll(/\bsetDismiss\('((?:[^'\\]|\\.)*)'/g))
 			found.push(m[1]);
 	}
@@ -69,8 +69,9 @@ describe('the dictionaries cover the interface', () => {
 		expect(missing, 'absentes de locales/en.json').toEqual([]);
 	});
 
-	// L'inverse compte autant : une entree que plus rien n'affiche se traduit
-	// encore, se relit en revue, et ment sur ce que l'interface contient.
+	// The converse matters as much: an entry nothing displays any more still
+	// gets translated, still gets read in review, and lies about what the
+	// interface contains.
 	it('has no entry that nothing displays any more', () => {
 		const shown = new Set([...markupStrings(), ...codeStrings()]);
 		const orphans = Object.keys(en).filter(k => !shown.has(k));
@@ -81,8 +82,8 @@ describe('the dictionaries cover the interface', () => {
 		expect(Object.keys(zhHans)).toEqual(Object.keys(en));
 	});
 
-	// L'anglais est la langue SOURCE : sa valeur est sa clef. Un ecart y serait
-	// une faute de frappe, et elle s'afficherait telle quelle.
+	// English is the SOURCE language: its value is its key. A drift there would
+	// be a typo, and it would show on screen exactly as typed.
 	it('keeps the English file an identity', () => {
 		const drifted = Object.entries(en).filter(([k, v]) => k !== v);
 		expect(drifted).toEqual([]);

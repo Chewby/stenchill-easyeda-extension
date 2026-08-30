@@ -22,6 +22,15 @@ export const API_KEY = 'stenchill-kicad-2026-xK9mP4wQ7rT2';
  */
 export const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
+/**
+ * Deadline for the startup version check.
+ *
+ * Deliberately far shorter than a generation's: nobody is waiting on this
+ * call, and the only thing an unbounded one buys is a connection held open
+ * against a server that has stopped answering.
+ */
+export const VERSION_CHECK_TIMEOUT_MS = 15 * 1000;
+
 export class ApiError extends Error {}
 
 /**
@@ -209,6 +218,11 @@ export async function fetchLatestVersion(
 	try {
 		const response = await fetchImpl(`${baseUrl}/plugin/easyeda/version`, {
 			headers: { 'User-Agent': userAgent },
+			// A SHORT ceiling, not a generation's: this call runs at client
+			// startup, nobody waits on it, and without a ceiling it holds a
+			// connection open for as long as the server stays silent. Its
+			// failure is already inconsequential, `catch` returns `null`.
+			signal: AbortSignal.timeout(VERSION_CHECK_TIMEOUT_MS),
 		});
 		if (!response.ok)
 			return null;

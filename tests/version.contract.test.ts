@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { VERSION } from '../src/version';
 
@@ -17,7 +17,7 @@ function read(name: string): { version: string; license: string } {
 	return JSON.parse(readFileSync(new URL(`../${name}`, import.meta.url), 'utf8'));
 }
 
-describe('la version, aux TROIS endroits ou elle vit', () => {
+describe('la version, aux QUATRE endroits ou elle vit', () => {
 	it('est la meme dans le code et dans le manifeste', () => {
 		expect(VERSION).toBe(read('extension.json').version);
 	});
@@ -28,6 +28,33 @@ describe('la version, aux TROIS endroits ou elle vit', () => {
 		// 26.8.1. A contract that covers only two of the three places leaves
 		// exactly the third one to drift.
 		expect(read('package.json').version).toBe(VERSION);
+	});
+
+	/**
+	 * Sonar attributes each analysis to a version. Frozen, the whole history
+	 * piles up under the same label and a regression stops being datable. This
+	 * fourth place is not in a JSON, so it is read line by line: exactly the
+	 * kind of place one forgets to bump.
+	 */
+	it('est la meme dans sonar-project.properties', () => {
+		// Ce fichier n'existe QUE dans le monorepo : il porte l'URL d'un serveur
+		// interne, donc il est exclu du depot public d'ou partent les releases.
+		// Son absence n'est pas un oubli, c'est le perimetre du fichier, et ce
+		// cas ne s'applique donc pas la-bas.
+		//
+		// C'est un saut conditionnel, ce que ce projet refuse d'habitude : le
+		// meme reflexe applique a `iframe/app.js` aurait laisse passer un paquet
+		// livre sans son interface. La difference tient a la CAUSE de l'absence.
+		// `iframe/app.js` manque transitoirement, avant une compilation, et on
+		// sait la declencher ; celui-ci manque par construction, definitivement,
+		// dans un depot ou Sonar ne tourne pas.
+		const url = new URL('../sonar-project.properties', import.meta.url);
+		if (!existsSync(url))
+			return;
+		const text = readFileSync(url, 'utf8');
+		const line = /^sonar\.projectVersion=(.+)$/m.exec(text);
+		expect(line, 'sonar.projectVersion absent').not.toBeNull();
+		expect(line![1].trim()).toBe(VERSION);
 	});
 
 	it('porte la meme licence partout', () => {

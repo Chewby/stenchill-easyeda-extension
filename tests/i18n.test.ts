@@ -18,8 +18,8 @@ describe('format', () => {
 	});
 
 	it('leaves a placeholder alone when its argument is missing', () => {
-		// Un `undefined` imprime a l'ecran ne dit rien ; l'emplacement, lui, dit
-		// qu'une valeur etait attendue la.
+		// An `undefined` printed on screen says nothing; the placeholder, on the
+		// other hand, says a value was expected there.
 		expect(format('Step ${1} of ${2}', [3])).toBe('Step 3 of ${2}');
 	});
 
@@ -40,8 +40,8 @@ describe('translate', () => {
 
 describe('pickDict', () => {
 	it('matches Chinese on its prefix, so zh-Hant and zh-CN are served too', () => {
-		// Servir du chinois simplifie a un lecteur de zh-Hant vaut mieux que de
-		// lui servir de l'anglais.
+		// Serving simplified Chinese to a zh-Hant reader beats serving them
+		// English.
 		for (const code of ['zh-Hans', 'zh-Hant', 'zh-CN', 'ZH'])
 			expect(pickDict(code, DICTS), code).toBe(ZH);
 	});
@@ -61,8 +61,8 @@ describe('resolveDict', () => {
 		expect(await resolveDict(async () => 'zh-Hans', DICTS)).toBe(ZH);
 	});
 
-	// L'echec doit rendre l'anglais et NON lever : une recherche de langue
-	// cassee ne doit pas couter son pochoir a l'utilisateur.
+	// A failure must return English and NOT throw: a broken language lookup
+	// must not cost the user their stencil.
 	it('falls back to English when the host throws', async () => {
 		const throwing = (): string => {
 			throw new Error('no host');
@@ -92,10 +92,10 @@ describe('localizeDocument', () => {
 	});
 
 	/**
-	 * Le piege du chantier : `Like it? <a>Ko-fi</a>` porte un noeud de texte
-	 * dont l'espace FINAL separe la phrase du lien. Une implementation qui
-	 * remplace `node.data` par la traduction nue colle les deux mots, et le
-	 * defaut ne se voit qu'a l'ecran.
+	 * This job's trap: `Like it? <a>Ko-fi</a>` carries a text node whose FINAL
+	 * space separates the sentence from the link. An implementation that
+	 * replaces `node.data` with the bare translation runs the two words
+	 * together, and the defect shows up only on screen.
 	 */
 	it('preserves the whitespace around a text node', () => {
 		const root = page('<span>Like it? <a href="#">Ko-fi</a></span>');
@@ -119,6 +119,26 @@ describe('localizeDocument', () => {
 		const root = page('<img alt="Stenchill" />');
 		localizeDocument(root, ZH);
 		expect(root.querySelector('img')!.getAttribute('alt')).toBe('Stenchill');
+	});
+
+	/**
+	 * The content of a <style> or a <script> is CODE, never language.
+	 *
+	 * The body of these elements is deliberately REDUCED to a dictionary key,
+	 * and that is what makes the test valid: the substitution compares the
+	 * WHOLE text node, so a realistic CSS such as `.a::after{content:"Quit"}`
+	 * matches nothing and would stay intact even without the guard. An early
+	 * version of the test used that CSS: it stayed green once the guard was
+	 * removed, so it proved nothing.
+	 *
+	 * The guard is therefore DEFENSIVE, a real stylesheet being one single big
+	 * text node. It costs two lines and closes the door.
+	 */
+	it('never rewrites the inside of a style or a script', () => {
+		const root = page('<style>Quit</style><script>Quit</script>');
+		localizeDocument(root, ZH);
+		expect(root.querySelector('style')!.textContent).toBe('Quit');
+		expect(root.querySelector('script')!.textContent).toBe('Quit');
 	});
 
 	it('is a no-op with an empty dictionary', () => {

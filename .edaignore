@@ -11,7 +11,10 @@
 /sonar-project.properties
 *.tsbuildinfo
 *.eext
+/.github/
+/.scannerwork/
 /CHANGELOG.md
+RELEASE_NOTES*.md
 /src/
 /.editorconfig
 /.gitattributes

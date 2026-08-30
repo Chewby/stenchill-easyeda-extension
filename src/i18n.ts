@@ -74,6 +74,9 @@ export async function resolveDict(
 	}
 }
 
+/** Elements whose text is code, never language. */
+const SKIPPED_PARENTS = new Set(['STYLE', 'SCRIPT', 'TITLE']);
+
 /** Attributes that carry text a human reads. `alt` is included, empty ones are skipped. */
 const TRANSLATED_ATTRIBUTES = ['data-tip', 'aria-label', 'placeholder', 'title', 'alt'] as const;
 
@@ -92,6 +95,13 @@ export function localizeDocument(root: Document | HTMLElement, dict: Dict): void
 		nodes.push(node as Text);
 
 	for (const node of nodes) {
+		// A TreeWalker visits EVERY text node, stylesheet and script bodies
+		// included. Since the key is the English text, a short entry is all it
+		// would take to rewrite a chunk of CSS. No dictionary entry collides
+		// with the current stylesheet, but that is a fact about today's
+		// dictionary, not a property of the code.
+		if (SKIPPED_PARENTS.has(node.parentElement?.tagName ?? ''))
+			continue;
 		const raw = node.data;
 		const trimmed = raw.trim();
 		if (!trimmed)

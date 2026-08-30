@@ -94,15 +94,20 @@ function mergePackageJson(local: any, remote: any): any {
 	const result = { ...local };
 
 	// 版本号使用远程
-	result.version = remote.version;
+	// The version is OURS, never the upstream template's. This line used to read
+	// `result.version = remote.version` and silently broke the three-place
+	// contract (src/version.ts, extension.json, package.json): that is exactly
+	// the incident `version.contract.test.ts` documents, where package.json had
+	// stayed at 1.6.19, the scaffold's version.
+	result.version = local.version;
 
-	// 合并 scripts（远程覆盖本地）
-	if (remote.scripts) {
-		result.scripts = {
-			...local.scripts,
-			...remote.scripts,
-		};
-	}
+	// The scripts are OURS, like the version just above, and for the same
+	// reason. The upstream scaffold carries `manifest:generate` and
+	// `manifest:bump`, which point at a `build/manifest.ts` that does not exist:
+	// merging them would write them back into package.json after we removed
+	// them, without a word, through the exact mechanism that already carried the
+	// version away.
+	result.scripts = { ...local.scripts };
 
 	// 合并 devDependencies（远程覆盖本地）
 	if (remote.devDependencies) {

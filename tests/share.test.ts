@@ -1,3 +1,4 @@
+import type { ShareOptions } from '../src/share';
 import JSZip from 'jszip';
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_PARAMS } from '../src/params';
@@ -99,5 +100,54 @@ describe('shareStencil', () => {
 			apiKey: 'k',
 			userAgent: 'UA',
 		})).rejects.toThrow(/did not include a URL/i);
+	});
+});
+
+/**
+ * Sharing was the only network call without a deadline. A silent
+ * `/plugin/share` left the "View in 3D" button disabled until the window was
+ * closed, without a word: the `.finally()` that re-enables it only runs once
+ * the promise settles.
+ */
+describe('le plafond de delai du partage', () => {
+	async function options(extra: Partial<ShareOptions> = {}): Promise<ShareOptions> {
+		return {
+			// A REAL archive: `injectParams` reopens it before sending, and any
+			// old blob makes it fail before reaching the fetch we want to
+			// observe.
+			zip: await makeZip(),
+			params: DEFAULT_PARAMS,
+			fetchImpl: (async () => new Response('{"url":"https://www.stenchill.com/view/x"}', { status: 200 })) as unknown as typeof fetch,
+			baseUrl: 'https://www.stenchill.com/api/v1',
+			apiKey: 'k',
+			userAgent: 'UA',
+			...extra,
+		};
+	}
+
+	it('passe un signal a fetch meme quand l appelant n en fournit aucun', async () => {
+		let seen: RequestInit | undefined;
+		await shareStencil(await options({
+			fetchImpl: (async (_url: string, init: RequestInit) => {
+				seen = init;
+				return new Response('{"url":"https://www.stenchill.com/view/x"}', { status: 200 });
+			}) as unknown as typeof fetch,
+		}));
+		expect(seen?.signal).toBeInstanceOf(AbortSignal);
+	});
+
+	// The caller's signal must stay ARMED: composing it with the deadline must
+	// not replace it, otherwise cancelling a share stops working.
+	it('honore l annulation de l appelant', async () => {
+		const controller = new AbortController();
+		controller.abort();
+		await expect(shareStencil(await options({
+			signal: controller.signal,
+			fetchImpl: (async (_url: string, init: RequestInit) => {
+				if (init.signal?.aborted)
+					throw new DOMException('aborted', 'AbortError');
+				return new Response('{}', { status: 200 });
+			}) as unknown as typeof fetch,
+		}))).rejects.toThrow();
 	});
 });

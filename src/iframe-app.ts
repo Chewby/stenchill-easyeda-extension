@@ -63,12 +63,16 @@ async function applyLanguage(): Promise<void> {
 /**
  * The user's language, asked of the host first and of the browser second.
  *
- * `eda.sys_I18n` being reachable FROM THE IFRAME is the one thing about this
- * feature that has not been measured inside the real client, and its absence
- * would be silent: `resolveDict` would swallow the TypeError and every reader
- * would get English, with nothing on screen to say why. `navigator.language`
- * costs three lines and turns that unknown into a graceful degradation, the
- * iframe being a real browsing context whatever else it is.
+ * `eda.sys_I18n` IS reachable from the iframe: measured on 2026-08-31 in the
+ * real desktop client, switching EasyEDA Pro to Simplified Chinese and getting
+ * the whole dialog back translated. It was the one unverified assumption of
+ * this feature, and it held.
+ *
+ * The browser fallback stays, downgraded from load-bearing to belt and braces.
+ * What it guards against is silent: had the call thrown, `resolveDict` would
+ * have swallowed the TypeError and every reader would have got English with
+ * nothing on screen to say why. Three lines is a fair price for that, and the
+ * iframe is a real browsing context whatever else it is.
  *
  * It is a FALLBACK and not the primary source: the host answers with the
  * language EasyEDA Pro is displayed in, which is what the user expects the
@@ -85,10 +89,17 @@ async function hostLanguage(): Promise<string> {
 }
 
 function showFatal(what: string, detail: unknown): void {
-	const box = document.createElement('pre');
-	box.style.cssText = 'white-space:pre-wrap;color:#ef6c6c;font:12px monospace;padding:12px';
+	// ONE panel only, reused. Without this, three failures in a row stacked
+	// three red blocks that pushed the form off screen, and the oldest one,
+	// hence the least relevant, stayed at the top.
+	let box = document.getElementById('fatal');
+	if (!box) {
+		box = document.createElement('pre');
+		box.id = 'fatal';
+		box.style.cssText = 'white-space:pre-wrap;color:#ef6c6c;font:12px monospace;padding:12px';
+		document.body.prepend(box);
+	}
 	box.textContent = `${what}\n${String(detail)}`;
-	document.body.prepend(box);
 }
 
 globalThis.addEventListener('error', event => showFatal(t('Script error'), event.message));
@@ -197,6 +208,13 @@ async function run(): Promise<void> {
 
 	try {
 		const params = readForm();
+		// We WRITE BACK to the form what was actually kept. `clampParams` brings
+		// an out-of-bounds entry back within bounds, but the field went on
+		// showing the refused value: the user believed they were generating a
+		// 5 mm stencil and got a 0.6 mm one, without a word.
+		// `<input type="number" max>` does not block typing, it only feeds native
+		// validation, which a `type="button"` button never triggers.
+		writeForm(params);
 		input('go').disabled = true;
 		input('reset').disabled = true;
 		setStatus(t('Exporting gerbers...'));
@@ -285,10 +303,10 @@ el('reset').addEventListener('click', () => writeForm(DEFAULT_PARAMS));
  * minute on a large board.
  */
 function setDismiss(label: 'Quit' | 'Cancel'): void {
-	// Le parametre reste la chaine ANGLAISE : c'est la cle du dictionnaire, et
-	// l'union de types la verrouille. Traduire au moment de l'affichage, jamais
-	// a l'appel, sinon la cle a traduire devient une variable et le garde de
-	// `tests/i18n.contract.test.ts` ne la voit plus.
+	// The parameter stays the ENGLISH string: it is the dictionary key, and the
+	// type union locks it. Translate at display time, never at the call site,
+	// otherwise the key to translate becomes a variable and the guard in
+	// `tests/i18n.contract.test.ts` no longer sees it.
 	el('quit').textContent = t(label);
 }
 
@@ -429,6 +447,17 @@ void applyLanguage();
 
 void loadSettings().then(writeForm);
 
-// Marker read by the page's probe: proves that this file ran to
-// completion.
-(globalThis as any).__stenchillLoaded = true;
+/**
+ * Marker read by the page's probe: proves that this file ran to completion.
+ *
+ * KEPT on purpose in the shipped bundle, and declared rather than cast: a
+ * blank dialog was the hardest failure of this project to diagnose, and this
+ * one boolean tells apart "the script never ran" from "the script ran and
+ * drew nothing". It costs one property on an object the client already owns.
+ */
+declare global {
+	// eslint-disable-next-line vars-on-top
+	var __stenchillLoaded: boolean | undefined;
+}
+
+globalThis.__stenchillLoaded = true;

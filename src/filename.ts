@@ -40,14 +40,27 @@ export function stencilFileName(projectName: string | null | undefined, date: Da
 	const cleaned = String(projectName ?? '')
 		.slice(0, 120)
 		.normalize('NFKD')
-		.replaceAll(/[^\w.-]+/g, '_')
+		// NFKD splits É into E plus a COMBINING accent, so the accent has to be
+		// dropped here. Without this line it survives to the next expression,
+		// which does not consider it a letter and turns it into an underscore
+		// in the MIDDLE of the word: 'Carte Émetteur' came out 'Carte_E_metteur'.
+		.replaceAll(/\p{M}+/gu, '')
+		// Letters of EVERY script, not just ASCII. `\w` is ASCII-only, so a
+		// Chinese or Cyrillic name lost all of its characters and the function
+		// fell back to 'stencil', throwing away the very identity the timestamp
+		// exists to preserve. On EasyEDA that is the common case, not the edge
+		// one. Measured on 2026-08-31: '电路板设计' produced 'stencil'.
+		.replaceAll(/[^\p{L}\p{N}._-]+/gu, '_')
 		// Two scans rather than one alternation: Sonar requires parentheses
 		// around "^a|b$" to make precedence explicit, and ESLint's
 		// no-useless-non-capturing-group rule removes them on the next --fix.
 		// The two tools contradicted each other on this line; removing the
 		// alternation takes away their subject of dispute, and reads better.
-		.replaceAll(/^[_.]+/g, '')
-		.replaceAll(/[_.]+$/g, '')
+		// The dash belongs in both classes: it was missing from the leading one,
+		// and 'ПЛАТА-2' produced a file named '-2_...zip', which a shell reads
+		// as an option rather than a path.
+		.replaceAll(/^[_.\-]+/g, '')
+		.replaceAll(/[_.\-]+$/g, '')
 		.slice(0, 60);
 	const base = cleaned.length > 0 ? cleaned : 'stencil';
 	return `${base}_${stamp(date)}.zip`;

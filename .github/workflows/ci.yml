@@ -1,0 +1,37 @@
+# Ce depot portait 104 tests, trois tests de contrat et un lint propre, et
+# RIEN ne les executait : ils ne protegeaient que les jours ou on pensait a
+# les lancer. Ce fichier ne fait travailler que ce qui existe deja.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` et non `npm install` : il installe EXACTEMENT le lock, donc
+      # une divergence entre le lock et le manifeste echoue ici plutot que de
+      # passer inapercue en resolvant autre chose.
+      - run: npm ci
+
+      # `npm test` lance `pretest` (donc esbuild), puis `tsc --noEmit`, puis
+      # vitest. Les deux premiers ne sont pas decoratifs : `package.contract`
+      # inspecte des fichiers GENERES, et sans le typage 50 tests sont deja
+      # passes au vert sur un code qui ne compilait pas.
+      - run: npm test
+
+      - run: npm run lint
+
+      # Le paquet se construit ici aussi : une erreur d'empaquetage ne se voit
+      # ni au typage ni aux tests, et c'est le seul artefact qu'on publie.
+      - run: npm run build

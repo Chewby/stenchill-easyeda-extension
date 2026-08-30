@@ -4,14 +4,14 @@
 	"displayName": "Stenchill",
 	"description": "Generate 3D-printable solder paste stencils from your PCB",
 	"version": "26.8.1",
-	"publisher": "",
+	"publisher": "Chewby",
 	"engines": {
 		"eda": "^3.2.0"
 	},
 	"license": "MIT",
 	"repository": {
-		"type": "extension-store",
-		"url": ""
+		"type": "git",
+		"url": "https://github.com/Chewby/stenchill-easyeda-extension"
 	},
 	"categories": "Other",
 	"keywords": [
@@ -20,8 +20,8 @@
 	"images": {
 		"logo": "./images/logo.png"
 	},
-	"homepage": "",
-	"bugs": "",
+	"homepage": "https://www.stenchill.com",
+	"bugs": "https://github.com/Chewby/stenchill-easyeda-extension/issues",
 	"activationEvents": {
 		"onStartupFinished": true
 	},

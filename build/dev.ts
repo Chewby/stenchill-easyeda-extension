@@ -3,8 +3,8 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import esbuild from 'esbuild';
 import fs from 'fs-extra';
-// `WebSocket` importe de `ws` et non le global : celui-ci n'est pas garanti
-// sur le Node 20.17 que declare `engines`.
+// `WebSocket` imported from `ws` and not the global one: the global is not
+// guaranteed on the Node 20.17 that `engines` declares.
 import { WebSocket, WebSocketServer } from 'ws';
 
 import common from '../config/esbuild.common.ts';
@@ -16,7 +16,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const WEBSOCKET_PORT = 59394;
-const DIST_DIR = path.join(__dirname, '../dist');
+// build/dist, like packaged.ts, and above all OUTSIDE the packaged tree. At the
+// root, the previous build's .eext ended up in the list of files to zip: the
+// package grew on every pass, and worse, the old one's read stream ran while
+// the new one's write stream truncated it, which produces a corrupted package
+// in a non-deterministic way.
+const DIST_DIR = path.join(__dirname, 'dist');
 const ROOT_DIR = path.join(__dirname, '../');
 
 // 处理 extension.json，确保 UUID 合法（只在启动时修复一次）
@@ -143,9 +148,34 @@ async function main() {
 		plugins: [rebuildPlugin],
 	});
 
+	// The SECOND entry point, the one that carries the whole interface.
+	//
+	// `common` only builds `src/index`, so dev mode ignored `src/iframe-app.ts`
+	// entirely: editing the interface triggered no rebuild, and on a fresh
+	// clone `npm run debug` packaged an extension with NO `iframe/app.js` at
+	// all, whose `<script src="/iframe/app.js">` 404s and leaves the dialog
+	// blank. Worse, `src/i18n.ts` IS in the first graph, through `dicts` and
+	// the update toast: editing a translation printed "Repackaging complete"
+	// while changing nothing on screen. A success message that lies is worse
+	// than no message.
+	//
+	// Same options as `config/esbuild.iframe.ts`, which produces this file for
+	// `npm run build`; the two must not drift.
+	const iframeCtx = await esbuild.context({
+		entryPoints: { app: './src/iframe-app' },
+		bundle: true,
+		minify: false,
+		outdir: './iframe/',
+		platform: 'browser',
+		format: 'iife',
+		treeShaking: true,
+		plugins: [rebuildPlugin],
+	});
+
 	// 初始构建
 	console.log('[Dev Mode] Starting initial build...');
 	await ctx.rebuild();
+	await iframeCtx.rebuild();
 	console.log('[Dev Mode] Initial build complete');
 
 	// 初始打包
@@ -153,6 +183,10 @@ async function main() {
 	await packageExtension(ROOT_DIR, EEXT_PATH);
 	// 启动文件监听
 	await ctx.watch();
+	// The plugin's 300 ms debounce absorbs both notifications when one file
+	// belongs to the two graphs, which is the case for everything `src/` shares
+	// between the extension and the iframe.
+	await iframeCtx.watch();
 	console.log('[Dev Mode] File watcher started, waiting for changes...');
 }
 

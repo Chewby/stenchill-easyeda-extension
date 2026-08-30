@@ -78,10 +78,31 @@ export interface ShareOptions {
 	baseUrl: string;
 	apiKey: string;
 	userAgent: string;
+	/** Caller cancellation, composed with the deadline below. */
+	signal?: AbortSignal;
 }
 
+/**
+ * Deadline for a share.
+ *
+ * Without one, a `/plugin/share` that never answers left the "View in 3D"
+ * button disabled until the window was closed, with no message: the
+ * `.finally()` that re-enables it only runs once the promise settles.
+ */
+export const SHARE_TIMEOUT_MS = 2 * 60 * 1000;
+
 export async function shareStencil(options: ShareOptions): Promise<string> {
-	const { zip, params, fetchImpl, baseUrl, apiKey, userAgent } = options;
+	const { zip, params, fetchImpl, baseUrl, apiKey, userAgent, signal } = options;
+
+	// Same composition as `generateStencil`, and the same fallback:
+	// `AbortSignal.any` requires Chromium >= 116, and we don't know the version
+	// the client embeds. With the fallback, the ceiling degrades instead of
+	// breaking sharing.
+	const deadline = AbortSignal.timeout(SHARE_TIMEOUT_MS);
+	const canCompose = typeof AbortSignal.any === 'function';
+	const effective = signal && canCompose
+		? AbortSignal.any([signal, deadline])
+		: (signal ?? deadline);
 
 	const body = new FormData();
 	body.append('file', await injectParams(zip, params), 'gerbers.zip');
@@ -90,6 +111,7 @@ export async function shareStencil(options: ShareOptions): Promise<string> {
 		method: 'POST',
 		body,
 		headers: { 'X-API-Key': apiKey, 'User-Agent': userAgent },
+		signal: effective,
 	});
 	if (!response.ok) {
 		throw new Error(`Share failed: HTTP ${response.status}`);
