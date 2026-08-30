@@ -56,8 +56,32 @@ function t(text: string, ...args: ReadonlyArray<string | number>): string {
  * ran. English is also what a failure leaves on screen, which is readable.
  */
 async function applyLanguage(): Promise<void> {
-	dict = await resolveDict(() => eda.sys_I18n.getCurrentLanguage(), DICTS);
+	dict = await resolveDict(hostLanguage, DICTS);
 	localizeDocument(document, dict);
+}
+
+/**
+ * The user's language, asked of the host first and of the browser second.
+ *
+ * `eda.sys_I18n` being reachable FROM THE IFRAME is the one thing about this
+ * feature that has not been measured inside the real client, and its absence
+ * would be silent: `resolveDict` would swallow the TypeError and every reader
+ * would get English, with nothing on screen to say why. `navigator.language`
+ * costs three lines and turns that unknown into a graceful degradation, the
+ * iframe being a real browsing context whatever else it is.
+ *
+ * It is a FALLBACK and not the primary source: the host answers with the
+ * language EasyEDA Pro is displayed in, which is what the user expects the
+ * extension to follow; the browser answers with the operating system's, which
+ * can differ.
+ */
+async function hostLanguage(): Promise<string> {
+	try {
+		return await eda.sys_I18n.getCurrentLanguage();
+	}
+	catch {
+		return navigator.language;
+	}
 }
 
 function showFatal(what: string, detail: unknown): void {
