@@ -21,6 +21,8 @@ First release.
 - Out-of-range settings are written back to the form, so the value you see is
   the value that was used.
 - Deadlines on the version check and on the share, so neither can hang.
+- The update check works at all. It never sent the API key that the route
+  requires, so it answered 401 and the extension stayed silent for ever.
 
 Requires the EasyEDA Pro desktop client. See
 [RELEASE_NOTES_26.8.1.md](RELEASE_NOTES_26.8.1.md) for the details and the

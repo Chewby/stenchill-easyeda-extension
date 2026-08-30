@@ -6,7 +6,7 @@
  * being available there in full (measured on 2026-08-30). See
  * `src/iframe-app.ts`.
  */
-import { DEFAULT_BASE_URL, fetchLatestVersion, isNewer } from './api-client';
+import { API_KEY, DEFAULT_BASE_URL, fetchLatestVersion, isNewer } from './api-client';
 import { DICTS } from './dicts';
 import { resolveDict, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
@@ -25,7 +25,7 @@ import { USER_AGENT, VERSION } from './version';
  */
 export function activate(): void {
 	void (async () => {
-		const latest = await fetchLatestVersion(fetch, DEFAULT_BASE_URL, USER_AGENT);
+		const latest = await fetchLatestVersion(fetch, DEFAULT_BASE_URL, USER_AGENT, API_KEY);
 		if (latest && isNewer(latest, VERSION)) {
 			const dict = await resolveDict(() => eda.sys_I18n.getCurrentLanguage(), DICTS);
 			eda.sys_Message.showToastMessage(translate(dict, 'Stenchill ${1} is available', latest));

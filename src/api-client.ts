@@ -205,19 +205,29 @@ export async function generateStencil(options: GenerateOptions): Promise<Generat
 /**
  * Returns the latest published version, or null.
  *
- * It returns null WITHOUT throwing on any anomaly, including a 404: the
- * route dedicated to this extension does not exist yet server-side, and a
- * version check that gets in the user's way is worse than no check at
- * all.
+ * It returns null WITHOUT throwing on any anomaly: a version check that gets
+ * in the user's way is worse than no check at all.
+ *
+ * The API KEY is required here, and forgetting it is exactly how this call
+ * spent its first day doing nothing. `/api/v1/**` is behind that key, so
+ * without the header the route answers 401, `response.ok` is false, and the
+ * function returns null: no error, no log, no toast, and every install stays
+ * on its version for ever. Measured on 2026-08-31 against production, which
+ * answers 26.8.2 with the header and 401 without it.
+ *
+ * This docstring used to say the route "does not exist yet server-side",
+ * which stopped being true the day it was deployed and then explained the
+ * silence away.
  */
 export async function fetchLatestVersion(
 	fetchImpl: typeof fetch,
 	baseUrl: string,
 	userAgent: string,
+	apiKey: string,
 ): Promise<string | null> {
 	try {
 		const response = await fetchImpl(`${baseUrl}/plugin/easyeda/version`, {
-			headers: { 'User-Agent': userAgent },
+			headers: { 'X-API-Key': apiKey, 'User-Agent': userAgent },
 			// A SHORT ceiling, not a generation's: this call runs at client
 			// startup, nobody waits on it, and without a ceiling it holds a
 			// connection open for as long as the server stays silent. Its
