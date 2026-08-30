@@ -1,0 +1,50 @@
+{
+	"name": "stenchill",
+	"uuid": "369eeb7d6e0240e1a6837f127840d3f2",
+	"displayName": "Stenchill",
+	"description": "Generate 3D-printable solder paste stencils from your PCB",
+	"version": "26.8.1",
+	"publisher": "",
+	"engines": {
+		"eda": "^3.2.0"
+	},
+	"license": "MIT",
+	"repository": {
+		"type": "extension-store",
+		"url": ""
+	},
+	"categories": "Other",
+	"keywords": [
+		"Tool"
+	],
+	"images": {
+		"logo": "./images/logo.png"
+	},
+	"homepage": "",
+	"bugs": "",
+	"activationEvents": {
+		"onStartupFinished": true
+	},
+	"entry": "./dist/index",
+	"dependentExtensions": {},
+	"headerMenus": {
+		"pcb": [
+			{
+				"id": "Stenchill",
+				"title": "Stenchill",
+				"menuItems": [
+					{
+						"id": "Generate",
+						"title": "Generate stencil...",
+						"registerFn": "openDialog"
+					},
+					{
+						"id": "About",
+						"title": "About...",
+						"registerFn": "about"
+					}
+				]
+			}
+		]
+	}
+}

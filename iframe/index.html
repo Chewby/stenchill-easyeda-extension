@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Stenchill</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<style>
+		/* Light palette by default; the [data-theme=dark] block replaces it.
+		   The actual theme is set on the root element by app.js, which
+		   queries eda.sys_Window.getCurrentTheme(). */
+		:root {
+			--bg: #f5f5f5;
+			--panel: #ffffff;
+			--border: #d8d8d8;
+			--text: #1a1a1a;
+			--muted: #6b6b6b;
+			--accent: #2b7cd3;
+			--accent-text: #ffffff;
+			--field-bg: #ffffff;
+			--ok: #1f8a3b;
+			--ko: #c62828;
+		}
+
+		html[data-theme='dark'] {
+			--bg: #2b2b2b;
+			--panel: #333333;
+			--border: #4a4a4a;
+			--text: #e8e8e8;
+			--muted: #9a9a9a;
+			--accent: #3b8ee0;
+			--accent-text: #ffffff;
+			--field-bg: #3c3c3c;
+			--ok: #5cc47a;
+			--ko: #ef6c6c;
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			font: 13px/1.45 system-ui, -apple-system, sans-serif;
+			margin: 0;
+			padding: 10px 14px 12px;
+			background: var(--bg);
+			color: var(--text);
+		}
+
+		header { text-align: center; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+		header img { width: 34px; height: 34px; }
+		header h1 { font-size: 14px; margin: 4px 0 2px; }
+		header p { margin: 0; color: var(--muted); font-size: 12px; }
+		header a { color: var(--accent); text-decoration: none; }
+		header a:hover { text-decoration: underline; }
+
+		fieldset {
+			border: 1px solid var(--border);
+			border-radius: 5px;
+			background: var(--panel);
+			margin: 10px 0 0;
+			padding: 8px 12px 10px;
+		}
+		legend { font-weight: 600; padding: 0 5px; }
+
+		.row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+		.row:first-of-type { margin-top: 0; }
+		.row label { flex: 1; }
+		.row input[type='number'] {
+			width: 92px;
+			padding: 3px 6px;
+			border: 1px solid var(--border);
+			border-radius: 3px;
+			background: var(--field-bg);
+			color: var(--text);
+		}
+		.row input[type='checkbox'] { width: 15px; height: 15px; accent-color: var(--accent); }
+
+		/* Help badge. The text lives in data-tip and is shown on click in
+		   the #tip bubble: the native `title` attribute shows NOTHING in this
+		   client, measured on 2026-08-30. */
+		.info {
+			position: relative;
+			font-family: inherit;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 15px;
+			height: 15px;
+			border-radius: 50%;
+			background: var(--accent);
+			color: var(--accent-text);
+			font-size: 10px;
+			font-weight: 700;
+			cursor: pointer;
+			flex: none;
+		}
+
+		/* Our own help bubble, a real element and not a pseudo: it needs a
+		   TITLE in addition to the text, like the KiCad plugin's RichToolTip,
+		   and two pseudo-elements do not form a single box.
+		   The native `title` attribute shows NOTHING in this client (measured
+		   on 2026-08-30), and help that does not show does not exist. */
+		#tip {
+			position: absolute;
+			display: none;
+			width: 250px;
+			padding: 8px 10px;
+			border: 1px solid var(--border);
+			border-radius: 4px;
+			background: var(--panel);
+			color: var(--text);
+			font-size: 11.5px;
+			line-height: 1.4;
+			box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+			z-index: 20;
+		}
+		#tip b { display: block; margin-bottom: 3px; }
+
+		.info:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+		.hint { color: var(--muted); font-size: 11px; margin: 4px 0 0 2px; }
+
+		#progress { margin-top: 14px; display: none; }
+		progress { width: 100%; height: 6px; }
+		#label { color: var(--muted); margin-top: 4px; }
+
+		#result { margin-top: 14px; display: none; }
+		#resultText { font-weight: 600; }
+		#resultText.ok { color: var(--ok); }
+		#resultText.ko { color: var(--ko); }
+
+		/* A single row, links on the left and buttons on the right, like KiCad.
+		   This layout imposes a MINIMUM width: at 470 px it wrapped and cut
+		   labels in half ("Reset / params").
+		   Measured on the real render: the links are ~130 px and the three
+		   buttons ~306 px with their gaps, so 555 px is plenty, whereas 640
+		   let the fields drift to the far right. The width lives in
+		   src/index.ts, the two go together. */
+		footer {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin-top: 12px;
+			padding-top: 10px;
+			border-top: 1px solid var(--border);
+			position: sticky;
+			bottom: 0;
+			background: var(--bg);
+		}
+		footer .spacer { flex: 1; min-width: 24px; }
+		footer .support { color: var(--muted); font-size: 12px; }
+		/* Permanently underlined, like KiCad's HyperlinkCtrl: a link that only
+		   signals itself on hover does not get seen. */
+		footer .support a { color: var(--accent); text-decoration: underline; cursor: pointer; }
+		footer .support a:hover { color: var(--text); }
+
+
+		button {
+			padding: 6px 13px;
+			white-space: nowrap;
+			border: 1px solid var(--border);
+			border-radius: 4px;
+			background: var(--panel);
+			color: var(--text);
+			cursor: pointer;
+		}
+		button:hover:not(:disabled) { border-color: var(--accent); }
+		button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+		button:disabled { opacity: 0.55; cursor: default; }
+	</style>
+</head>
+<body>
+	<header>
+		<img src="../images/stenchill.png" alt="" />
+		<h1>Generate 3D-Printable Stencil</h1>
+		<p>Export paste layers from your PCB and generate STL files</p>
+		<p><a id="site" href="#">stenchill.com</a></p>
+	</header>
+
+	<form id="form" onsubmit="return false">
+		<fieldset>
+			<legend>Printability</legend>
+			<div class="row">
+				<label for="enableSlotify">Merge close pads</label>
+				<button type="button" class="info" data-tip="When pads are too close for the nozzle, fuses each row into a single slot to avoid walls thinner than the nozzle that won't print correctly.">i</button>
+				<input id="enableSlotify" type="checkbox" checked />
+			</div>
+			<div class="row">
+				<label for="dropUnprintableGrids">Fill in unprintable grids</label>
+				<button type="button" class="info" data-tip="A fine-pitch BGA has walls thinner than your nozzle. Left as openings, filling them in costs nothing; on an LGA you will need a finer nozzle.">i</button>
+				<input id="dropUnprintableGrids" type="checkbox" checked />
+			</div>
+		</fieldset>
+
+		<fieldset>
+			<legend>Stencil</legend>
+			<div class="row">
+				<label for="thickness">Thickness (mm)</label>
+				<button type="button" class="info" data-tip="Stencil thickness. Defines the solder paste deposit.">i</button>
+				<input id="thickness" type="number" inputmode="decimal" step="0.05" min="0.1" max="0.6" value="0.40" />
+			</div>
+			<div class="row">
+				<label for="shrink">Shrink (mm)</label>
+				<button type="button" class="info" data-tip="Reduces every opening by this amount. A negative value enlarges them.">i</button>
+				<input id="shrink" type="number" inputmode="decimal" step="0.05" min="-0.2" max="0.3" value="0.00" />
+			</div>
+			<div class="row">
+				<label for="nozzleDiameter">Nozzle (mm)</label>
+				<button type="button" class="info" data-tip="Your 3D printer nozzle size - 0.2 mm recommended for best results.">i</button>
+				<input id="nozzleDiameter" type="number" inputmode="decimal" step="0.05" min="0.1" max="0.8" value="0.40" />
+			</div>
+			<p class="hint">0.2 mm recommended</p>
+		</fieldset>
+
+		<fieldset>
+			<legend>Alignment</legend>
+			<div class="row">
+				<label for="enableShoulders">Shoulders</label>
+				<button type="button" class="info" data-tip="Adds supports to hold the PCB and align the stencil.">i</button>
+				<input id="enableShoulders" type="checkbox" checked />
+			</div>
+			<div class="row">
+				<label for="pcbThickness">PCB thickness (mm)</label>
+				<button type="button" class="info" data-tip="Thickness of your board. Sets how tall the shoulders are.">i</button>
+				<input id="pcbThickness" type="number" inputmode="decimal" step="0.1" min="0.4" max="3.2" value="1.60" />
+			</div>
+			<div class="row">
+				<label for="shoulderLength">Length (mm)</label>
+				<button type="button" class="info" data-tip="How far each L-bracket runs along the board edge.">i</button>
+				<input id="shoulderLength" type="number" inputmode="decimal" step="1" min="1" max="200" value="15" />
+			</div>
+			<div class="row">
+				<label for="shoulderWidth">Width (mm)</label>
+				<button type="button" class="info" data-tip="Wall thickness of the L-brackets.">i</button>
+				<input id="shoulderWidth" type="number" inputmode="decimal" step="0.5" min="0.5" max="8" value="3.00" />
+			</div>
+			<div class="row">
+				<label for="shoulderClearance">Clearance (mm)</label>
+				<button type="button" class="info" data-tip="Gap left between the board and the shoulder walls.">i</button>
+				<input id="shoulderClearance" type="number" inputmode="decimal" step="0.05" min="0" max="1" value="0.30" />
+			</div>
+		</fieldset>
+
+		<div id="progress">
+			<progress id="bar" max="5" value="0"></progress>
+			<div id="label" aria-live="polite"></div>
+		</div>
+
+		<div id="result">
+			<div id="resultText"></div>
+			<div class="row" style="margin-top: 8px;">
+				<button id="view" type="button">View in 3D on stenchill.com</button>
+			</div>
+			<a id="resultLink" href="#" target="_blank" rel="noopener noreferrer" aria-label="Share link" style="display:none;margin-top:6px;word-break:break-all;color:var(--accent)"></a>
+		</div>
+
+		<footer>
+			<span class="support">Like it? <a id="kofi" href="#">☕ Ko-fi</a> · <a id="paypal" href="#">PayPal</a></span>
+			<span class="spacer"></span>
+			<button id="reset" type="button">Reset params</button>
+			<button id="quit" type="button">Quit</button>
+			<button id="go" class="primary" type="button">Generate Stencil</button>
+		</footer>
+	</form>
+
+	<div id="tip"><b id="tipTitle"></b><span id="tipText"></span></div>
+	<script src="/iframe/app.js"></script>
+</body>
+</html>
