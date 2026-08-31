@@ -485,19 +485,26 @@ async function checkForUpdate(): Promise<void> {
 // iife puisqu'elle est chargee par une balise <script> et non comme un module.
 // La fonction anonyme asynchrone est donc la seule forme disponible, et elle a
 // le merite de rendre l'ordre explicite.
-void (async () => {
-	await applyLanguage();
-	await checkForUpdate();
-})();
-
 // Le bouton reste inerte tant que les reglages ne sont pas revenus : sinon un
 // stockage qui tarde ecrase une saisie deja commencee, ou pire, on genere avec
 // des parametres que l'utilisateur n'a pas vus.
 input('go').disabled = true;
-void loadSettings().then((params) => {
-	writeForm(params);
+
+// UNE seule fonction anonyme asynchrone pour tout le demarrage, et l'ordre est
+// porteur. La langue d'abord, `localizeDocument` ne traduisant que ce qui est
+// deja dans le document. Les reglages ensuite, pour rendre le bouton au plus
+// tot. La verification de version en DERNIER, parce qu'elle passe par le
+// reseau et ne doit retarder ni l'un ni l'autre.
+//
+// Le chargement des reglages etait une chaine `.then()` a part : Sonar S7785 la
+// refuse, et la forme qu'il prefere, un `await` de premier niveau, ne compile
+// pas en iife. La fondre ici supprime la chaine au lieu de la faire tolerer.
+void (async () => {
+	await applyLanguage();
+	writeForm(await loadSettings());
 	input('go').disabled = false;
-});
+	await checkForUpdate();
+})();
 
 /**
  * Marker read by the page's probe: proves that this file ran to completion.
