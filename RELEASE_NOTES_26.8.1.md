@@ -2,7 +2,7 @@
 
 First release. Stenchill turns the paste layers of your board into a stencil you can print on a normal FDM printer, and this extension does it without ever leaving EasyEDA Pro. No manual Gerber export, no zip to assemble, no file to drag into a browser.
 
-Open a board, pick your settings, click once. The extension exports the paste and outline layers, sends them to stenchill.com, follows the generation live, and hands you back the STL archive.
+Open a board, pick your settings, click once. The extension exports the paste and outline layers, sends them to stenchill.com, follows the generation live, and hands you back an archive of STL and 3MF files.
 
 ## What it does
 
@@ -15,6 +15,7 @@ Open a board, pick your settings, click once. The extension exports the paste an
   archive is named after the board and the time, and a Chinese, Cyrillic or
   accented name used to be mangled or dropped entirely.
 - **Speaks English and Simplified Chinese**, following whichever language EasyEDA Pro itself is set to. Every label, every help panel and every status message is translated; an entry it cannot find falls back to English rather than showing you a blank.
+- **Tells you when a newer version exists**, straight away, in a banner under the header. The check gives up after 15 seconds and fails silently rather than showing you an error. These notes first listed this as a limitation, because the server route was not up yet and the call did not carry its API key; both were fixed on 2026-08-31.
 - **Opens the result in 3D on stenchill.com**, with your exact settings carried along so the page shows the stencil you just saved and not a default one.
 
 ## Settings
@@ -42,7 +43,6 @@ An internet connection. Generation runs on stenchill.com. I reserve the right to
 ## Known limitations
 
 - The EasyEDA export API this extension relies on is marked BETA by EasyEDA itself, and may change without notice.
-- The update check is in place but its server route is not live yet, so this version will never tell you a newer one exists. It fails silently by design rather than showing an error.
 
 ## Links
 
