@@ -328,6 +328,14 @@
 
 	<span id="infoWord" hidden>More information about</span>
 	<div id="tip" role="tooltip" aria-live="polite"><b id="tipTitle"></b><span id="tipText"></span></div>
-	<script src="app.js"></script>
+	<!-- ABSOLUTE, and it must stay so. Made relative on 2026-08-31 for
+	     consistency with the neighbouring `<img src="../images/...">`, on the
+	     reasoning that since the image resolves, the base must be `/iframe/`.
+	     The reasoning was wrong: the real client served the page from another
+	     base, `app.js` 404ed, no script ran at all, and the Generate button
+	     did nothing. The image and the script are NOT resolved against the
+	     same base here. Reported within the hour by a real trial; nothing in
+	     the test suite can see it. -->
+	<script src="/iframe/app.js"></script>
 </body>
 </html>
