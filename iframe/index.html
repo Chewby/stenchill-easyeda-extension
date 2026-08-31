@@ -98,6 +98,18 @@
 		   and two pseudo-elements do not form a single box.
 		   The native `title` attribute shows NOTHING in this client (measured
 		   on 2026-08-30), and help that does not show does not exist. */
+		#update {
+			margin: 0 0 10px;
+			padding: 7px 10px;
+			border-radius: 6px;
+			background: rgba(60, 130, 246, 0.14);
+			border: 1px solid rgba(60, 130, 246, 0.45);
+			font-size: 12px;
+			text-align: center;
+		}
+
+		#update a { margin-left: 6px; }
+
 		#tip {
 			position: absolute;
 			display: none;
@@ -174,6 +186,14 @@
 		<p>Export paste layers from your PCB and generate STL and 3MF files</p>
 		<p><a id="site" href="#">stenchill.com</a></p>
 	</header>
+
+	<!-- Bandeau de mise a jour, masque tant qu'il n'y a rien a dire. Persistant
+	     et non fugace : le greffon KiCad fait pareil, et un toast de 3 secondes
+	     au demarrage du client passe sous les yeux de personne. -->
+	<div id="update" style="display:none">
+		<span id="updateText"></span>
+		<a id="updateLink" href="#">Download</a>
+	</div>
 
 	<form id="form" onsubmit="return false">
 		<fieldset>

@@ -22,9 +22,6 @@
 	},
 	"homepage": "https://www.stenchill.com",
 	"bugs": "https://github.com/Chewby/stenchill-easyeda-extension/issues",
-	"activationEvents": {
-		"onStartupFinished": true
-	},
 	"entry": "./dist/index",
 	"dependentExtensions": {},
 	"headerMenus": {

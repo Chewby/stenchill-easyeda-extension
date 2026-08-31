@@ -40,10 +40,9 @@ Simplified Chinese. Anything it has no translation for falls back to English.
 Only the paste layers and the board outline of the open board, and only when
 you click Generate. Nothing else on your PCB travels.
 
-**It also calls stenchill.com once when EasyEDA starts**, to ask whether a
-newer version exists. That call carries the extension's version and nothing
-else, gives up after 15 seconds, and fails silently. There is no way to turn it
-off yet.
+**It also asks stenchill.com whether a newer version exists**, each time you
+open the dialog and never otherwise. That call carries the extension's version
+and nothing else, gives up after 15 seconds, and fails silently.
 
 ## Links
 

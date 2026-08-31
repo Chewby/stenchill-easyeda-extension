@@ -9,7 +9,7 @@ import type { Dict } from './i18n';
  * talks to the server itself. `src/index.ts` now only opens this page.
  */
 import type { GenerationParams } from './params';
-import { API_KEY, ApiError, DEFAULT_BASE_URL, generateStencil } from './api-client';
+import { API_KEY, ApiError, DEFAULT_BASE_URL, fetchLatestVersion, generateStencil, isNewer } from './api-client';
 import { DICTS } from './dicts';
 import { exportPasteGerbers } from './exporter';
 import { stencilFileName } from './filename';
@@ -17,7 +17,7 @@ import { localizeDocument, resolveDict, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
 import { clampParams, DEFAULT_PARAMS } from './params';
 import { shareStencil } from './share';
-import { USER_AGENT } from './version';
+import { USER_AGENT, VERSION } from './version';
 
 // No `declare const eda` here: @jlceda/pro-api-types already declares the
 // global `const eda: EDA`, and it is in the tsconfig's include. Redeclaring
@@ -443,7 +443,33 @@ async function applyTheme(): Promise<void> {
 
 void applyTheme();
 
-void applyLanguage();
+/**
+ * The update notice, shown in the dialog and not as a startup toast.
+ *
+ * `eda.sys_Message.showToastMessage` closes itself after three seconds, and it
+ * fired while EasyEDA was still starting up, so nobody ever saw it. The KiCad
+ * plugin puts a persistent band in its own dialog for the same reason.
+ *
+ * Silent on every anomaly, by design: `fetchLatestVersion` returns null rather
+ * than throwing, and a version check that gets in the way is worse than none.
+ */
+async function checkForUpdate(): Promise<void> {
+	const latest = await fetchLatestVersion(fetch, DEFAULT_BASE_URL, USER_AGENT, API_KEY);
+	if (!latest || !isNewer(latest, VERSION))
+		return;
+	el('updateText').textContent = t('New version ${1} available', latest);
+	const link = el('updateLink') as HTMLAnchorElement;
+	link.textContent = t('Download');
+	link.onclick = (event) => {
+		event.preventDefault();
+		openAndShow('https://github.com/Chewby/stenchill-easyeda-extension/releases');
+	};
+	el('update').style.display = 'block';
+}
+
+// Apres la langue : le bandeau ecrit du texte traduit, et `applyLanguage` ne
+// traduit que ce qui est deja dans le document.
+void applyLanguage().then(checkForUpdate);
 
 void loadSettings().then(writeForm);
 

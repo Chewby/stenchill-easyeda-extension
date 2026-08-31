@@ -6,32 +6,26 @@
  * being available there in full (measured on 2026-08-30). See
  * `src/iframe-app.ts`.
  */
-import { API_KEY, DEFAULT_BASE_URL, fetchLatestVersion, isNewer } from './api-client';
 import { DICTS } from './dicts';
 import { resolveDict, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
-import { USER_AGENT, VERSION } from './version';
+import { VERSION } from './version';
 
-/**
- * Version check at startup.
+/*
+ * There is no `activate` here any more, and no `activationEvents` in
+ * extension.json either.
  *
- * It cannot get in the way: `fetchLatestVersion` returns `null` on any
- * anomaly, including the 404 the route returns TODAY, its server-side
- * counterpart not existing yet.
+ * It existed to check for a newer version when EasyEDA started, and it did so
+ * with `eda.sys_Message.showToastMessage`, which closes itself after three
+ * seconds while the client is still starting up. Nobody ever saw it. The check
+ * now lives in the dialog, as a band that stays put, which is where the user
+ * actually is and what the KiCad plugin does.
  *
- * This wiring was already lost once, on 2026-08-30, while rewriting this
- * file: the two functions ended up with no caller and `activate` empty. A
- * symbol with no caller never cleans itself up on its own.
+ * Removing the export is safe: the host calls it as
+ * `if (typeof activate === 'function')`, verified on 2026-08-31 in the
+ * client's own `pro-api/api.js`. The extension also stops making a network
+ * call every time EasyEDA launches, whether or not anyone opens a PCB.
  */
-export function activate(): void {
-	void (async () => {
-		const latest = await fetchLatestVersion(fetch, DEFAULT_BASE_URL, USER_AGENT, API_KEY);
-		if (latest && isNewer(latest, VERSION)) {
-			const dict = await resolveDict(() => eda.sys_I18n.getCurrentLanguage(), DICTS);
-			eda.sys_Message.showToastMessage(translate(dict, 'Stenchill ${1} is available', latest));
-		}
-	})();
-}
 
 export function openDialog(): void {
 	eda.sys_IFrame.openIFrame('/iframe/index.html', 555, 690, IFRAME_ID);

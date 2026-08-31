@@ -42,6 +42,7 @@
 	"Unhandled rejection": "Unhandled rejection",
 	"Generate failed": "Generate failed",
 	"Share failed": "Share failed",
-	"Stenchill ${1} is available": "Stenchill ${1} is available",
-	"About": "About"
+	"About": "About",
+	"New version ${1} available": "New version ${1} available",
+	"Download": "Download"
 }
