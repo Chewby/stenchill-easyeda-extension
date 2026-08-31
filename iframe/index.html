@@ -36,12 +36,30 @@
 
 		* { box-sizing: border-box; }
 
+		/* Colonne pleine hauteur : c'est ce qui POUSSE la barre du bas tout en
+		   bas. `position: sticky` seul ne le fait pas, il ne s'active qu'en cas
+		   de debordement, donc sur une fenetre plus haute que son contenu la
+		   barre restait collee au dernier champ avec du vide en dessous.
+		   `border-box` est indispensable ici : sans lui la marge interieure
+		   s'ajoute aux 100vh et fabrique le debordement qu'on veut eviter. */
 		body {
 			font: 13px/1.45 system-ui, -apple-system, sans-serif;
 			margin: 0;
 			padding: 10px 14px 12px;
 			background: var(--bg);
 			color: var(--text);
+			box-sizing: border-box;
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+		}
+
+		/* Le formulaire porte la barre du bas, donc c'est LUI qui doit occuper
+		   la hauteur restante pour pouvoir l'y repousser. */
+		#form {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
 		}
 
 		header { text-align: center; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
@@ -163,7 +181,11 @@
 			display: flex;
 			align-items: center;
 			gap: 8px;
-			margin-top: 12px;
+			/* `auto` et non une valeur fixe : c'est ce qui mange l'espace libre
+			   et pose la barre au ras du bas. Quand il n'y a plus rien a manger
+			   elle tombe a zero, et c'est la marge interieure de 10px qui garde
+			   l'ecart avec le trait de separation. */
+			margin-top: auto;
 			padding-top: 10px;
 			border-top: 1px solid var(--border);
 			position: sticky;

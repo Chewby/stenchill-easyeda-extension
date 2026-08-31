@@ -42,6 +42,26 @@ describe('the dialog size contract', () => {
 		expect(PAGE).toMatch(/footer \{[^}]*bottom: 0/);
 	});
 
+	/**
+	 * And PUSHES it there, which is a different thing.
+	 *
+	 * `position: sticky` only engages once the content overflows. On a window
+	 * taller than its content, which is the normal case now that the height
+	 * has room for the update band, the footer stayed glued to the last field
+	 * with empty space underneath. The full-height flex column plus
+	 * `margin-top: auto` is what puts it at the very bottom.
+	 *
+	 * `border-box` is not decoration either: without it the body's padding
+	 * adds to the 100vh and creates the very overflow this avoids.
+	 */
+	it('pushes the footer down on a window taller than its content', () => {
+		expect(PAGE).toMatch(/body \{[^}]*min-height: 100vh/);
+		expect(PAGE).toMatch(/body \{[^}]*box-sizing: border-box/);
+		expect(PAGE).toMatch(/body \{[^}]*flex-direction: column/);
+		expect(PAGE).toMatch(/#form \{[^}]*flex: 1/);
+		expect(PAGE).toMatch(/footer \{[^}]*margin-top: auto/);
+	});
+
 	// Le point d'entree n'a PAS d'acces reseau, mesure le 2026-08-31 contre le
 	// client : la premiere ouverture apres une nouvelle version defilait, la
 	// seconde non, ce qui ne peut arriver que si c'est la page qui demande. Y
