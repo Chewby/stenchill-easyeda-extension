@@ -10,6 +10,7 @@ import type { Dict } from './i18n';
  */
 import type { GenerationParams } from './params';
 import { API_KEY, ApiError, DEFAULT_BASE_URL, fetchLatestVersion, generateStencil, isNewer } from './api-client';
+import { UPDATE_PENDING_KEY } from './dialog-size';
 import { DICTS } from './dicts';
 import { exportPasteGerbers } from './exporter';
 import { stencilFileName } from './filename';
@@ -460,9 +461,14 @@ void applyTheme();
  */
 async function checkForUpdate(): Promise<void> {
 	const latest = await fetchLatestVersion(fetch, DEFAULT_BASE_URL, USER_AGENT, API_KEY);
-	if (!latest || !isNewer(latest, VERSION))
+	const pending = Boolean(latest) && isNewer(latest as string, VERSION);
+	// Memorise pour la PROCHAINE ouverture, qui doit choisir sa hauteur avant
+	// que cette page n'existe. L'echec est sans consequence : au pire une barre
+	// de defilement.
+	await eda.sys_Storage.setExtensionUserConfig(UPDATE_PENDING_KEY, pending).catch(() => {});
+	if (!pending)
 		return;
-	el('updateText').textContent = t('New version ${1} available', latest);
+	el('updateText').textContent = t('New version ${1} available', latest as string);
 	const link = el('updateLink') as HTMLAnchorElement;
 	link.textContent = t('Download');
 	link.onclick = (event) => {

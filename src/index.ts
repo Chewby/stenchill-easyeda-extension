@@ -6,6 +6,7 @@
  * being available there in full (measured on 2026-08-30). See
  * `src/iframe-app.ts`.
  */
+import { DIALOG_HEIGHT, DIALOG_WIDTH, UPDATE_BAND_HEIGHT, UPDATE_PENDING_KEY } from './dialog-size';
 import { DICTS } from './dicts';
 import { resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
@@ -28,7 +29,18 @@ import { VERSION } from './version';
  */
 
 export function openDialog(): void {
-	eda.sys_IFrame.openIFrame('/iframe/index.html', 555, 690, IFRAME_ID);
+	void (async () => {
+		let pending = false;
+		try {
+			pending = await eda.sys_Storage.getExtensionUserConfig(UPDATE_PENDING_KEY) === true;
+		}
+		catch {
+			// An unreadable flag must not prevent opening the dialog. The worst
+			// it costs is a scrollbar.
+		}
+		const height = DIALOG_HEIGHT + (pending ? UPDATE_BAND_HEIGHT : 0);
+		eda.sys_IFrame.openIFrame('/iframe/index.html', DIALOG_WIDTH, height, IFRAME_ID);
+	})();
 }
 
 /**

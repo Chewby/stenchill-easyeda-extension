@@ -98,13 +98,19 @@
 		   and two pseudo-elements do not form a single box.
 		   The native `title` attribute shows NOTHING in this client (measured
 		   on 2026-08-30), and help that does not show does not exist. */
+		/* Compact a dessein : la hauteur de la fenetre est FIGEE a l'ouverture
+		   (`openIFrame(..., 555, 690)`) et le SDK n'expose aucun redimensionnement,
+		   donc chaque pixel pris ici sort en bas et fait apparaitre une barre de
+		   defilement. D'ou une seule ligne, sans marge propre : le bandeau se loge
+		   dans la marge basse que l'en-tete reservait deja. */
 		#update {
-			margin: 0 0 10px;
-			padding: 7px 10px;
-			border-radius: 6px;
+			margin: 6px 0 -2px;
+			padding: 3px 10px;
+			border-radius: 5px;
 			background: rgba(60, 130, 246, 0.14);
 			border: 1px solid rgba(60, 130, 246, 0.45);
-			font-size: 12px;
+			font-size: 11.5px;
+			line-height: 1.5;
 			text-align: center;
 		}
 
@@ -192,15 +198,17 @@
 		<h1>Generate 3D-Printable Stencil</h1>
 		<p>Export paste layers from your PCB and generate STL and 3MF files</p>
 		<p><a id="site" href="#">stenchill.com</a></p>
-	</header>
 
-	<!-- Bandeau de mise a jour, masque tant qu'il n'y a rien a dire. Persistant
-	     et non fugace : le greffon KiCad fait pareil, et un toast de 3 secondes
-	     au demarrage du client passe sous les yeux de personne. -->
-	<div id="update" style="display:none">
-		<span id="updateText"></span>
-		<a id="updateLink" href="#">Download</a>
-	</div>
+		<!-- Bandeau de mise a jour, masque tant qu'il n'y a rien a dire.
+		     Persistant et non fugace : le greffon KiCad fait pareil, et un toast
+		     de 3 secondes au demarrage du client passe sous les yeux de personne.
+		     Place DANS l'en-tete pour partager sa bordure basse plutot que d'en
+		     ajouter une seconde. -->
+		<div id="update" style="display:none">
+			<span id="updateText"></span>
+			<a id="updateLink" href="#">Download</a>
+		</div>
+	</header>
 
 	<form id="form" onsubmit="return false">
 		<fieldset>
