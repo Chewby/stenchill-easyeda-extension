@@ -37,7 +37,7 @@ Open a PCB and the menu appears under `Advanced` → `Stenchill`.
 
 **The EasyEDA Pro desktop client.** The web version is not supported: a browser enforces the cross-origin rule that the desktop client does not, so the call to stenchill.com is blocked there. Supporting it needs two changes on the server side, neither of them done: the EasyEDA origin would have to be allowed, and so would the `X-API-Key` header the extension sends on every call.
 
-An internet connection. Generation runs on stenchill.com, and your Gerber files are not kept after it.
+An internet connection. Generation runs on stenchill.com. I reserve the right to keep your Gerber files in some cases, notably to diagnose a problem, and some are kept as lasting test cases. They remain strictly internal and are never shared. Full policy: https://www.stenchill.com/privacy-policy
 
 ## Known limitations
 

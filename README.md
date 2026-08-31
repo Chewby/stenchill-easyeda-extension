@@ -4,6 +4,13 @@ Turns the paste layers of your board into a stencil you can print on a normal
 FDM printer, without ever leaving EasyEDA Pro. No manual Gerber export, no zip
 to assemble, no file to drag into a browser.
 
+## Installing it
+
+Download the `.eext` from the [latest release](https://github.com/Chewby/stenchill-easyeda-extension/releases/latest),
+then in EasyEDA Pro: `Advanced` → `Extension Manager` → `Import`.
+
+Open a PCB and the menu appears under `Advanced` → `Stenchill`.
+
 ## How to use it
 
 Open a PCB, then `Advanced → Stenchill → Generate stencil...`.
@@ -20,6 +27,21 @@ alignment shoulders on. A 0.2 mm nozzle gives noticeably better results if your
 printer has one.
 
 Your settings are remembered between runs.
+
+## Settings
+
+| Setting | Default | Range | What it does |
+|---|---|---|---|
+| Thickness | 0.4 mm | 0.1 to 0.6 | Stencil plate thickness, which sets the paste deposit |
+| Shrink | 0 mm | -0.2 to 0.3 | Reduces every opening by this much. A negative value enlarges them |
+| Nozzle | 0.4 mm | 0.1 to 0.8 | Your printer's nozzle, which drives the compensation |
+| Merge close pads | on | on/off | Fuses a fine-pitch row into one slot instead of leaving walls no nozzle can print |
+| Fill in unprintable grids | on | on/off | Fills the openings of a grid whose walls are thinner than your nozzle |
+| Alignment shoulders | on | on/off | Adds the corner supports that hold the board and align the stencil |
+| PCB thickness | 1.6 mm | 0.4 to 3.2 | Your board's thickness, which sets how tall the shoulders are |
+| Shoulder length | 15 mm | 1 to 200 | How far each L-bracket runs along the board edge |
+| Shoulder width | 3 mm | 0.5 to 8 | Wall thickness of the L-brackets |
+| Shoulder clearance | 0.3 mm | 0 to 1 | Gap left between the board and the shoulder walls |
 
 ## What it needs
 
