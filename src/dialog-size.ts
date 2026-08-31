@@ -22,13 +22,27 @@
 /**
  * Key under which the version check leaves its answer for the iframe.
  *
- * It holds the latest published version as a string, or null when there is
- * nothing newer. The check runs in the entry point, BEFORE the window opens,
- * because that is the only moment its height can still be chosen; the iframe
- * then reads the answer instead of asking again, which also keeps the whole
- * feature down to one network call.
+ * The value is `{ checked, latest }`, and the first field is what makes the
+ * whole thing robust. `checked` says the entry point actually got an answer,
+ * `latest` carries it, null meaning nothing newer.
+ *
+ * Why the distinction matters: the entry point and the iframe are two
+ * DIFFERENT execution contexts, and the extension one has never been shown to
+ * reach the network. The iframe's has, repeatedly. So the entry point tries,
+ * and says whether it succeeded; when it did not, the page falls back to
+ * asking for itself rather than showing nothing. A single `latest: null` could
+ * not tell "nothing newer" from "could not ask", and the second silently
+ * became the first.
  */
 export const UPDATE_LATEST_KEY = 'updateLatest';
+
+/** What the entry point leaves behind for the page. */
+export interface UpdateAnswer {
+	/** True when the check ran and returned something, right or wrong. */
+	checked: boolean;
+	/** The newer version, or null when there is none. */
+	latest: string | null;
+}
 
 /** The dialog with nothing special to say. */
 export const DIALOG_WIDTH = 555;

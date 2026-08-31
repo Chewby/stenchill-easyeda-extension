@@ -7,7 +7,7 @@
  * `src/iframe-app.ts`.
  */
 import { API_KEY, DEFAULT_BASE_URL, fetchLatestVersion, isNewer, PREOPEN_VERSION_TIMEOUT_MS } from './api-client';
-import { DIALOG_HEIGHT, DIALOG_WIDTH, UPDATE_BAND_HEIGHT, UPDATE_LATEST_KEY } from './dialog-size';
+import { DIALOG_HEIGHT, DIALOG_WIDTH, UPDATE_BAND_HEIGHT, UPDATE_LATEST_KEY, type UpdateAnswer } from './dialog-size';
 import { DICTS } from './dicts';
 import { resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
@@ -44,22 +44,27 @@ import { USER_AGENT, VERSION } from './version';
  */
 export function openDialog(): void {
 	void (async () => {
-		let pending = false;
+		const answer: UpdateAnswer = { checked: false, latest: null };
 		try {
 			const latest = await fetchLatestVersion(
-				fetch,
-				DEFAULT_BASE_URL,
-				USER_AGENT,
-				API_KEY,
-				PREOPEN_VERSION_TIMEOUT_MS,
+				fetch, DEFAULT_BASE_URL, USER_AGENT, API_KEY, PREOPEN_VERSION_TIMEOUT_MS,
 			);
-			pending = latest !== null && isNewer(latest, VERSION);
-			await eda.sys_Storage.setExtensionUserConfig(UPDATE_LATEST_KEY, pending ? latest : null);
+			// `null` se lit ici « pas de reponse » et non « rien de neuf » : la
+			// fonction rend null aussi bien sur un 404 que sur un reseau muet,
+			// et confondre les deux ferait taire le repli de la page.
+			answer.checked = latest !== null;
+			answer.latest = latest !== null && isNewer(latest, VERSION) ? latest : null;
 		}
 		catch {
 			// A version check must never cost the user their dialog.
 		}
-		const height = DIALOG_HEIGHT + (pending ? UPDATE_BAND_HEIGHT : 0);
+		try {
+			await eda.sys_Storage.setExtensionUserConfig(UPDATE_LATEST_KEY, answer);
+		}
+		catch {
+			// Sans reponse ecrite, la page redemandera d'elle-meme.
+		}
+		const height = DIALOG_HEIGHT + (answer.latest ? UPDATE_BAND_HEIGHT : 0);
 		eda.sys_IFrame.openIFrame('/iframe/index.html', DIALOG_WIDTH, height, IFRAME_ID);
 	})();
 }

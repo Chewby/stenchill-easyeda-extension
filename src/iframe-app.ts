@@ -9,8 +9,8 @@ import type { Dict } from './i18n';
  * talks to the server itself. `src/index.ts` now only opens this page.
  */
 import type { GenerationParams } from './params';
-import { API_KEY, ApiError, DEFAULT_BASE_URL, generateStencil } from './api-client';
-import { UPDATE_LATEST_KEY } from './dialog-size';
+import { API_KEY, ApiError, DEFAULT_BASE_URL, fetchLatestVersion, generateStencil, isNewer } from './api-client';
+import { UPDATE_LATEST_KEY, type UpdateAnswer } from './dialog-size';
 import { DICTS } from './dicts';
 import { exportPasteGerbers } from './exporter';
 import { stencilFileName } from './filename';
@@ -18,7 +18,7 @@ import { localizeDocument, resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
 import { clampParams, DEFAULT_PARAMS } from './params';
 import { shareStencil } from './share';
-import { USER_AGENT } from './version';
+import { USER_AGENT, VERSION } from './version';
 
 // No `declare const eda` here: @jlceda/pro-api-types already declares the
 // global `const eda: EDA`, and it is in the tsconfig's include. Redeclaring
@@ -460,18 +460,7 @@ void applyTheme();
  * band, and a version check that gets in the way is worse than none.
  */
 async function checkForUpdate(): Promise<void> {
-	// On LIT le verdict, on ne le redemande pas : `openDialog` a deja pose la
-	// question, parce que lui seul pouvait encore choisir la hauteur de la
-	// fenetre. Redemander ici doublerait l'appel reseau et pourrait rendre une
-	// autre reponse, donc un bandeau qui ne correspond plus a la place reservee.
-	let latest: string | null = null;
-	try {
-		const saved = await eda.sys_Storage.getExtensionUserConfig(UPDATE_LATEST_KEY);
-		latest = typeof saved === 'string' ? saved : null;
-	}
-	catch {
-		// Rien a annoncer, et surtout rien a interrompre.
-	}
+	const latest = await updateAnswer();
 	if (!latest)
 		return;
 	el('updateText').textContent = t('New version ${1} available', latest);
@@ -482,6 +471,42 @@ async function checkForUpdate(): Promise<void> {
 		openAndShow(`https://www.stenchill.com/${locale}/easyeda-extension`);
 	};
 	el('update').style.display = 'block';
+}
+
+/**
+ * The newer version, or null.
+ *
+ * READ first, from what `openDialog` left behind: it is the only side that
+ * could still choose the window's height, and it asked for both of us. Asking
+ * again first would double the network call and could return a different
+ * answer, hence a band that no longer matches the space reserved for it.
+ *
+ * The FALLBACK is what the `checked` field is for. The entry point runs in
+ * another execution context, whose ability to reach the network has never been
+ * shown; this one's has, repeatedly. So when the entry point could not ask, we
+ * ask here rather than show nothing. That open scrolls, the height being
+ * already settled, and the answer is stored so the next one does not.
+ */
+async function updateAnswer(): Promise<string | null> {
+	try {
+		const saved = await eda.sys_Storage.getExtensionUserConfig(UPDATE_LATEST_KEY) as UpdateAnswer | undefined;
+		if (saved?.checked)
+			return typeof saved.latest === 'string' ? saved.latest : null;
+	}
+	catch {
+		// Unreadable: fall through and ask, as if nothing had been asked.
+	}
+
+	const latest = await fetchLatestVersion(fetch, DEFAULT_BASE_URL, USER_AGENT, API_KEY);
+	const newer = latest !== null && isNewer(latest, VERSION) ? latest : null;
+	try {
+		await eda.sys_Storage.setExtensionUserConfig(UPDATE_LATEST_KEY,
+			{ checked: latest !== null, latest: newer } satisfies UpdateAnswer);
+	}
+	catch {
+		// At worst the next open asks again.
+	}
+	return newer;
 }
 
 // Apres la langue, et dans cet ordre : le bandeau ecrit du texte traduit,

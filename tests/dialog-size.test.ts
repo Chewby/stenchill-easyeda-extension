@@ -32,23 +32,36 @@ describe('the dialog size contract', () => {
 	});
 
 	/**
-	 * The check must run in the ENTRY POINT and not in the iframe, and that is
-	 * not a preference: `openIFrame` takes the height as an argument and
-	 * nothing can change it afterwards, so a check made inside the page always
-	 * arrives after the height is settled. An earlier version did exactly that
-	 * and the first open after a new version appeared still scrolled.
+	 * The check must run in the ENTRY POINT, and that is not a preference:
+	 * `openIFrame` takes the height as an argument and nothing can change it
+	 * afterwards, so a check made inside the page always arrives after the
+	 * height is settled. An earlier version did exactly that, and the first
+	 * open after a new version appeared still scrolled.
 	 */
-	it('asks before opening, and the page only reads the answer', () => {
+	it('asks before opening, on a deadline short enough for a menu click', () => {
 		// On asserte sur l'APPEL et sur son argument, pas sur les mots : les deux
 		// noms figurent aussi dans le commentaire au-dessus, et une assertion sur
 		// le mot nu restait verte alors que l'appel employait le plafond long.
 		// Vu ne PAS rougir a la mutation, ce qui est la seule facon de s'en
 		// apercevoir.
 		expect(ENTRY).toMatch(/fetchLatestVersion\([\s\S]*?PREOPEN_VERSION_TIMEOUT_MS[\s\S]*?\)/);
-		// On cherche un APPEL et non le mot : un commentaire qui nomme la
-		// fonction est legitime, et une assertion sur le mot nu ferait rougir
-		// le test pour une phrase.
-		expect(IFRAME).not.toMatch(/\bfetchLatestVersion\(/);
+	});
+
+	/**
+	 * The page READS first and only asks when the entry point could not.
+	 *
+	 * The fallback exists because the two files run in different execution
+	 * contexts, and the extension one has never been shown to reach the
+	 * network while the iframe's has. But it must stay a fallback: if the page
+	 * asked first, the answer could differ from the one that sized the window,
+	 * and the band would no longer match the space reserved for it.
+	 */
+	it('reads the stored answer before it ever asks for itself', () => {
+		const read = IFRAME.indexOf('getExtensionUserConfig(UPDATE_LATEST_KEY)');
+		const ask = IFRAME.search(/\bfetchLatestVersion\(/);
+		expect(read, 'la page ne lit pas la reponse stockee').toBeGreaterThan(-1);
+		expect(ask, 'la page ne sait plus demander').toBeGreaterThan(-1);
+		expect(read).toBeLessThan(ask);
 	});
 
 	it('keeps the band height positive and the window plausible', () => {
