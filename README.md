@@ -27,8 +27,7 @@ Your settings are remembered between runs.
 enforces the cross-origin rule that the desktop client does not, so the call to
 stenchill.com is blocked there.
 
-An internet connection. Generation runs on stenchill.com, and your Gerber files
-are not kept after it.
+An internet connection. Generation runs on stenchill.com.
 
 ## Languages
 
@@ -45,6 +44,16 @@ open the dialog and never otherwise. That call carries the extension's version
 and nothing else, gives up after 15 seconds, and fails silently. When a
 new version is found the dialog says so straight away, in a banner under the
 header.
+
+## Your Gerber files
+
+Generation runs on stenchill.com. I reserve the right to keep your Gerber
+files in some cases, notably to diagnose a problem, and some are kept as
+lasting test cases, replayed on every change to the engine so that a fix never
+breaks a board that used to work. They remain strictly internal and are never
+shared.
+
+Full policy: https://www.stenchill.com/privacy-policy
 
 ## Links
 
