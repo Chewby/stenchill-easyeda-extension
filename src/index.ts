@@ -6,7 +6,7 @@
  * being available there in full (measured on 2026-08-30). See
  * `src/iframe-app.ts`.
  */
-import { DIALOG_HEIGHT, DIALOG_WIDTH, UPDATE_BAND_HEIGHT, UPDATE_LATEST_KEY, type UpdateAnswer } from './dialog-size';
+import { DIALOG_HEIGHT, DIALOG_WIDTH } from './dialog-size';
 import { DICTS } from './dicts';
 import { resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
@@ -41,40 +41,8 @@ import { VERSION } from './version';
  * gives up after `PREOPEN_VERSION_TIMEOUT_MS`, which is short precisely
  * because the user is waiting on a window that has not appeared yet.
  */
-/**
- * Opens the dialog, sized from what the page found last time.
- *
- * This function does NOT check for a new version, and that is a measurement,
- * not a preference. The check was tried here first, because `openIFrame` takes
- * the height as an argument and nothing can change it afterwards, so this is
- * the only moment the window can be made taller for the update band. It never
- * returned anything: this execution context has no network access, while the
- * iframe's does. Confirmed against the running client on 2026-08-31, by the
- * only signal available from outside it: the first open after a new version
- * appears scrolls, and the second does not, which can only happen if the page
- * is the one doing the asking.
- *
- * Keeping the attempt would have cost every menu click a wait of up to
- * `PREOPEN_VERSION_TIMEOUT_MS` for an answer that never comes.
- *
- * The consequence is therefore unavoidable and worth stating plainly: the
- * FIRST open after a new version appears is the short one and scrolls once.
- * Every open after that is the right height, and the window shrinks back on
- * its own once the update is installed.
- */
 export function openDialog(): void {
-	void (async () => {
-		let latest: string | null = null;
-		try {
-			const saved = await eda.sys_Storage.getExtensionUserConfig(UPDATE_LATEST_KEY) as UpdateAnswer | undefined;
-			latest = saved?.checked && typeof saved.latest === 'string' ? saved.latest : null;
-		}
-		catch {
-			// An unreadable answer costs a scrollbar, never the dialog.
-		}
-		const height = DIALOG_HEIGHT + (latest ? UPDATE_BAND_HEIGHT : 0);
-		eda.sys_IFrame.openIFrame('/iframe/index.html', DIALOG_WIDTH, height, IFRAME_ID);
-	})();
+	eda.sys_IFrame.openIFrame('/iframe/index.html', DIALOG_WIDTH, DIALOG_HEIGHT, IFRAME_ID);
 }
 
 /**

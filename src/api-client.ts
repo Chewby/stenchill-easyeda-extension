@@ -31,7 +31,6 @@ export const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
  */
 export const VERSION_CHECK_TIMEOUT_MS = 15 * 1000;
 
-
 export class ApiError extends Error {}
 
 /**

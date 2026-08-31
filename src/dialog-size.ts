@@ -1,57 +1,32 @@
 /**
- * The dialog's size, and the one thing that changes it.
+ * The dialog's size.
  *
  * `eda.sys_IFrame.openIFrame` takes the height as an argument and the SDK
- * exposes NO way to resize afterwards (checked on 2026-08-31 against
- * `SYS_IFrame`, which offers open, close, hide, show and nothing else). The
- * height is therefore decided before the page that knows whether the update
- * band will show even exists.
+ * exposes NO way to resize afterwards, checked on 2026-08-31 against
+ * `SYS_IFrame`, which offers open, close, hide, show and nothing else. One
+ * height therefore has to fit every state the page can be in.
  *
- * So the check runs BEFORE the window opens, in the entry point, and its
- * answer is handed to the iframe through storage. An earlier version had the
- * iframe check for itself and remember the verdict for NEXT time, which meant
- * the first open after a new version appeared still scrolled. Asking first
- * costs a short wait on the menu click and removes that case entirely.
+ * That is why it includes room for the update band, which is only there when a
+ * newer version exists. An earlier design sized the window per open, from an
+ * answer the page had stored on a previous run. It worked from the second open
+ * onwards and never on the first, because the context that opens the window
+ * has no network access and could not ask for itself. Thirty-four pixels of
+ * headroom buys the same result with no storage, no stale answer, and no first
+ * open behaving differently from the rest.
  *
- * Both values live here rather than in the two files that use them: they are a
- * contract between the extension entry point, which sizes the window, and the
- * iframe, which fills it. Apart they would drift, and the symptom would be a
- * scrollbar nobody connects back to a number.
+ * The footer stays reachable whatever happens: it is `position: sticky` at the
+ * bottom, so the Generate button never scrolls out of reach even if some
+ * future state does overflow.
  */
 
-/**
- * Key under which the version check leaves its answer for the iframe.
- *
- * The value is `{ checked, latest }`, and the first field is what makes the
- * whole thing robust. `checked` says the entry point actually got an answer,
- * `latest` carries it, null meaning nothing newer.
- *
- * Why the distinction matters: the entry point and the iframe are two
- * DIFFERENT execution contexts, and the extension one has never been shown to
- * reach the network. The iframe's has, repeatedly. So the entry point tries,
- * and says whether it succeeded; when it did not, the page falls back to
- * asking for itself rather than showing nothing. A single `latest: null` could
- * not tell "nothing newer" from "could not ask", and the second silently
- * became the first.
- */
-export const UPDATE_LATEST_KEY = 'updateLatest';
-
-/** What the entry point leaves behind for the page. */
-export interface UpdateAnswer {
-	/** True when the check ran and returned something, right or wrong. */
-	checked: boolean;
-	/** The newer version, or null when there is none. */
-	latest: string | null;
-}
-
-/** The dialog with nothing special to say. */
 export const DIALOG_WIDTH = 555;
-export const DIALOG_HEIGHT = 690;
 
 /**
- * What the update band costs, measured on its own styling: 3 + 3 of padding,
- * 2 of border, one line at 11.5px over 1.5, and 6 - 2 of margin. Rounded up,
- * because a window a few pixels too tall shows nothing while one a few pixels
- * too short shows a scrollbar.
+ * 690 for the form and its result, plus 34 for the update band.
+ *
+ * Not a guess: 724 is the height the dynamic version computed for its second
+ * open, and that window was looked at and judged right on 2026-08-31. Slack on
+ * top of it was tried and rejected the same day, it showed as empty space with
+ * nothing in it.
  */
-export const UPDATE_BAND_HEIGHT = 34;
+export const DIALOG_HEIGHT = 724;
