@@ -28,6 +28,7 @@ const SHIPPED = [
 	'extension.json',
 	'iframe/app.js',
 	'iframe/index.html',
+	'images/banner.jpg',
 	'images/logo.png',
 	'images/stenchill.png',
 	'locales/en.json',

@@ -18,7 +18,8 @@
 		"Tool"
 	],
 	"images": {
-		"logo": "./images/logo.png"
+		"logo": "./images/logo.png",
+		"banner": "./images/banner.jpg"
 	},
 	"homepage": "https://www.stenchill.com",
 	"bugs": "https://github.com/Chewby/stenchill-easyeda-extension/issues",
