@@ -13,7 +13,6 @@
 *.eext
 /.github/
 /.scannerwork/
-/CHANGELOG.md
 /CONTRIBUTING.md
 RELEASE_NOTES*.md
 /src/

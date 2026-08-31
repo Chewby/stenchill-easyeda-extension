@@ -21,6 +21,7 @@ import { getPackageFileList } from '../build/utils';
  * defended in review.
  */
 const SHIPPED = [
+	'CHANGELOG.md',
 	'LICENSE',
 	'README.md',
 	'dist/index.js',

@@ -11,7 +11,7 @@ First release.
 - Saves the result as `<project>_<date>_<time>.zip`.
 - Opens the stencil in 3D on stenchill.com, carrying your settings so the page
   shows the one you saved.
-- Nine settings in three groups matching the website and the KiCad plugin, each
+- Ten settings in three groups matching the website and the KiCad plugin, each
   with a help panel, remembered between runs.
 - Interface in English and Simplified Chinese, following EasyEDA Pro's own
   language setting.
@@ -24,6 +24,5 @@ First release.
 - The update check works at all. It never sent the API key that the route
   requires, so it answered 401 and the extension stayed silent for ever.
 
-Requires the EasyEDA Pro desktop client. See
-[RELEASE_NOTES_26.8.1.md](RELEASE_NOTES_26.8.1.md) for the details and the
-known limitations.
+Requires the EasyEDA Pro desktop client. Full notes and known limitations:
+https://github.com/Chewby/stenchill-easyeda-extension/releases/tag/v26.8.1
