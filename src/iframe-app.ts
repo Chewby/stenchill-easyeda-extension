@@ -13,6 +13,7 @@ import { API_KEY, ApiError, DEFAULT_BASE_URL, fetchLatestVersion, generateStenci
 import { DICTS } from './dicts';
 import { exportPasteGerbers } from './exporter';
 import { stencilFileName } from './filename';
+import { el, input, readForm, writeForm } from './form';
 import { localizeDocument, resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
 import { clampParams, DEFAULT_PARAMS } from './params';
@@ -124,60 +125,6 @@ let lastParams: GenerationParams | null = null;
 
 /** Non-null during a generation: carries the bottom button's cancellation. */
 let inFlight: AbortController | null = null;
-
-const NUMBER_FIELDS = [
-	'thickness',
-	'shrink',
-	'nozzleDiameter',
-	'pcbThickness',
-	'shoulderLength',
-	'shoulderWidth',
-	'shoulderClearance',
-] as const;
-
-const BOOL_FIELDS = ['enableShoulders', 'enableSlotify', 'dropUnprintableGrids'] as const;
-
-function el(id: string): HTMLElement {
-	const node = document.getElementById(id);
-	if (!node)
-		throw new Error(`missing element: ${id}`);
-	return node;
-}
-
-function input(id: string): HTMLInputElement {
-	return el(id) as HTMLInputElement;
-}
-
-/**
- * Reads a numeric field, and returns NaN on an empty or invalid entry.
- *
- * `Number('')` is 0, which is finite, so `clampParams` would CLAMP it
- * instead of rejecting it: an empty `thickness` field gave 0.1 mm -- the
- * minimum -- instead of reverting to 0.4. So "empty" must be distinguished
- * from "zero" here, since `clampParams` can no longer do it once the
- * number has been computed.
- *
- * The comma `replace` is defensive and nothing more: on an
- * `<input type="number">`, the browser renders `.value === ''` when the
- * entry is invalid, so in practice it never sees a comma. An earlier
- * draft of this comment claimed the opposite.
- */
-function readNumber(id: string): number {
-	const raw = input(id).value.trim().replace(',', '.');
-	return raw === '' ? Number.NaN : Number(raw);
-}
-
-function readForm(): GenerationParams {
-	const raw: Record<string, unknown> = {};
-	for (const id of NUMBER_FIELDS) raw[id] = readNumber(id);
-	for (const id of BOOL_FIELDS) raw[id] = input(id).checked;
-	return clampParams(raw as Partial<GenerationParams>);
-}
-
-function writeForm(params: GenerationParams): void {
-	for (const id of NUMBER_FIELDS) input(id).value = String(params[id]);
-	for (const id of BOOL_FIELDS) input(id).checked = params[id];
-}
 
 function setStatus(text: string): void {
 	el('label').textContent = text;
