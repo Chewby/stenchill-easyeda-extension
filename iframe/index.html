@@ -328,14 +328,15 @@
 
 	<span id="infoWord" hidden>More information about</span>
 	<div id="tip" role="tooltip" aria-live="polite"><b id="tipTitle"></b><span id="tipText"></span></div>
-	<!-- ABSOLUTE, and it must stay so. Made relative on 2026-08-31 for
-	     consistency with the neighbouring `<img src="../images/...">`, on the
-	     reasoning that since the image resolves, the base must be `/iframe/`.
-	     The reasoning was wrong: the real client served the page from another
-	     base, `app.js` 404ed, no script ran at all, and the Generate button
-	     did nothing. The image and the script are NOT resolved against the
-	     same base here. Reported within the hour by a real trial; nothing in
-	     the test suite can see it. -->
+	<!-- The path below is ABSOLUTE, and it must stay so. It was made
+	     relative on 2026-08-31 for consistency with the image tag near the top
+	     of the page, on the reasoning that since the image resolves, the base
+	     must be the iframe folder. The real client serves this page from
+	     another base: the bundle answered 404, no script ran at all, and every
+	     button in the dialog was dead. The image and the script are NOT
+	     resolved against the same base here. Reported within the hour by a
+	     real trial; nothing in the test suite can see it, so the guard is
+	     tests/iframe-page.contract.test.ts. -->
 	<script src="/iframe/app.js"></script>
 </body>
 </html>
