@@ -129,34 +129,42 @@ const TRANSLATED_ATTRIBUTES = ['data-tip', 'aria-label', 'placeholder', 'title',
  * run together, a defect that shows up only in the rendered page.
  */
 export function localizeDocument(root: Document | HTMLElement, dict: Dict): void {
-	const doc = 'ownerDocument' in root && root.ownerDocument ? root.ownerDocument : (root as Document);
+	const doc = 'ownerDocument' in root && root.ownerDocument ? root.ownerDocument : root;
+	translateTextNodes(doc, root, dict);
+	translateAttributes(root, dict);
+}
+
+/**
+ * Translates the text nodes under `root`.
+ *
+ * A TreeWalker visits EVERY text node, stylesheet and script bodies included.
+ * Since the key is the English text, a short entry is all it would take to
+ * rewrite a chunk of CSS. No dictionary entry collides with the current
+ * stylesheet, but that is a fact about today's dictionary, not a property of
+ * the code.
+ */
+function translateTextNodes(doc: Document, root: Node, dict: Dict): void {
 	const walker = doc.createTreeWalker(root, 4 /* NodeFilter.SHOW_TEXT */);
 	const nodes: Text[] = [];
 	for (let node = walker.nextNode(); node; node = walker.nextNode())
 		nodes.push(node as Text);
 
 	for (const node of nodes) {
-		// A TreeWalker visits EVERY text node, stylesheet and script bodies
-		// included. Since the key is the English text, a short entry is all it
-		// would take to rewrite a chunk of CSS. No dictionary entry collides
-		// with the current stylesheet, but that is a fact about today's
-		// dictionary, not a property of the code.
 		if (SKIPPED_PARENTS.has(node.parentElement?.tagName ?? ''))
 			continue;
 		const raw = node.data;
 		const trimmed = raw.trim();
-		if (!trimmed)
-			continue;
-		const translated = dict[trimmed];
+		const translated = trimmed ? dict[trimmed] : undefined;
 		if (translated === undefined)
 			continue;
-		const lead = raw.slice(0, raw.indexOf(trimmed));
-		const tail = raw.slice(raw.indexOf(trimmed) + trimmed.length);
-		node.data = lead + translated + tail;
+		const at = raw.indexOf(trimmed);
+		node.data = raw.slice(0, at) + translated + raw.slice(at + trimmed.length);
 	}
+}
 
-	const elements = Array.from((root as HTMLElement).querySelectorAll?.('*') ?? []);
-	for (const element of elements) {
+/** Translates the attributes that carry text a human reads. */
+function translateAttributes(root: Document | HTMLElement, dict: Dict): void {
+	for (const element of Array.from(root.querySelectorAll('*'))) {
 		for (const name of TRANSLATED_ATTRIBUTES) {
 			const value = element.getAttribute(name);
 			if (!value)

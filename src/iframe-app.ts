@@ -475,9 +475,19 @@ async function checkForUpdate(): Promise<void> {
 	el('update').style.display = 'block';
 }
 
-// Apres la langue : le bandeau ecrit du texte traduit, et `applyLanguage` ne
-// traduit que ce qui est deja dans le document.
-void applyLanguage().then(checkForUpdate);
+// Apres la langue, et dans cet ordre : le bandeau ecrit du texte traduit,
+// alors que `localizeDocument` ne traduit que ce qui est deja dans le
+// document.
+// Sonar S7785 voudrait un `await` de premier niveau ici. Il ne compile pas :
+// mesure le 2026-08-31, esbuild rend « Top-level await is currently not
+// supported with the "iife" output format », et l'iframe DOIT etre servie en
+// iife puisqu'elle est chargee par une balise <script> et non comme un module.
+// La fonction anonyme asynchrone est donc la seule forme disponible, et elle a
+// le merite de rendre l'ordre explicite.
+void (async () => {
+	await applyLanguage();
+	await checkForUpdate();
+})();
 
 void loadSettings().then(writeForm);
 
