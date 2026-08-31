@@ -25,14 +25,6 @@ import { USER_AGENT, VERSION } from './version';
 // getCurrentProjectInfo, saveFile and getCurrentTheme.
 
 /**
- * Error safety net, placed BEFORE everything else.
- *
- * Without it, an exception at load time prevents the submit handler from
- * being registered, the form then goes into navigation, and the page
- * turns BLANK without a word. Encountered on 2026-08-30. A blank page
- * cannot be diagnosed, so we make any error visible on screen.
- */
-/**
  * The dictionary in force, English until the host answers.
  *
  * It is a mutable module binding and not a promise the callers await: every
@@ -47,6 +39,9 @@ function t(text: string, ...args: ReadonlyArray<string | number>): string {
 	return translate(dict, text, ...args);
 }
 
+/** The site locale to link to, settled with the dictionary. */
+let locale = 'en';
+
 /**
  * Applies the host's language to the page.
  *
@@ -55,9 +50,6 @@ function t(text: string, ...args: ReadonlyArray<string | number>): string {
  * lesser evil than a dialog that could stay blank forever if the reveal never
  * ran. English is also what a failure leaves on screen, which is readable.
  */
-/** The site locale to link to, settled with the dictionary. */
-let locale = 'en';
-
 async function applyLanguage(): Promise<void> {
 	const language = await hostLanguage();
 	dict = await resolveDict(() => language, DICTS);
@@ -93,6 +85,14 @@ async function hostLanguage(): Promise<string> {
 	}
 }
 
+/**
+ * Error safety net.
+ *
+ * Without it, an exception at load time prevents the submit handler from
+ * being registered, the form then goes into navigation, and the page turns
+ * BLANK without a word. Encountered on 2026-08-30. A blank page cannot be
+ * diagnosed, so we make any error visible on screen.
+ */
 function showFatal(what: string, detail: unknown): void {
 	// ONE panel only, reused. Without this, three failures in a row stacked
 	// three red blocks that pushed the form off screen, and the oldest one,
@@ -318,6 +318,10 @@ function setDismiss(label: 'Quit' | 'Cancel'): void {
 el('quit').addEventListener('click', () => {
 	if (inFlight) {
 		inFlight.abort();
+		// `abort()` n'interrompt PAS `exportPasteGerbers`, qui peut durer
+		// plusieurs secondes sur une grande carte : sans ce mot, l'utilisateur
+		// clique et rien ne bouge jusqu'a la fin de l'export.
+		setStatus(t('Cancelling...'));
 		return;
 	}
 	eda.sys_IFrame.closeIFrame(IFRAME_ID);
@@ -486,7 +490,14 @@ void (async () => {
 	await checkForUpdate();
 })();
 
-void loadSettings().then(writeForm);
+// Le bouton reste inerte tant que les reglages ne sont pas revenus : sinon un
+// stockage qui tarde ecrase une saisie deja commencee, ou pire, on genere avec
+// des parametres que l'utilisateur n'a pas vus.
+input('go').disabled = true;
+void loadSettings().then((params) => {
+	writeForm(params);
+	input('go').disabled = false;
+});
 
 /**
  * Marker read by the page's probe: proves that this file ran to completion.

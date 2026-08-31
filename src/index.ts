@@ -29,17 +29,18 @@ import { VERSION } from './version';
  */
 
 /**
- * Opens the dialog, after asking whether a newer version exists.
+ * Opens the dialog. One line, and that is the whole point.
  *
- * The order is forced by the SDK, not chosen: `openIFrame` takes the height as
- * an argument and nothing can change it afterwards, so the answer has to be in
- * hand before the window exists. The answer is then left in storage for the
- * page to read, which keeps the whole feature down to a single network call.
+ * A version check used to live here, so the window could be opened taller when
+ * an update banner was going to show. It never returned anything: this
+ * execution context has no network access, while the iframe's does. The check
+ * lives in the page now, and the height is a single constant with room for the
+ * banner, which removes the storage, the stale answer and the first open that
+ * behaved differently from the rest.
  *
- * Nothing here can prevent the dialog from opening: `fetchLatestVersion`
- * returns null on any anomaly, the storage write is swallowed, and the check
- * gives up after `PREOPEN_VERSION_TIMEOUT_MS`, which is short precisely
- * because the user is waiting on a window that has not appeared yet.
+ * This docstring described that removed mechanism for a while, down to a
+ * constant that existed nowhere else in the repository. `filename.ts` says it
+ * best: a wrong comment gets paid for later.
  */
 export function openDialog(): void {
 	eda.sys_IFrame.openIFrame('/iframe/index.html', DIALOG_WIDTH, DIALOG_HEIGHT, IFRAME_ID);

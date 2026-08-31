@@ -1,6 +1,6 @@
 import type { GenerationParams } from './params';
 import JSZip from 'jszip';
-import { DEFAULT_BASE_URL } from './api-client';
+import { DEFAULT_BASE_URL, withDeadline } from './api-client';
 
 /**
  * Sharing the stencil: we send the Gerber ZIP back to the site, which
@@ -65,8 +65,21 @@ export function isTrustedViewUrl(url: string, baseUrl: string = DEFAULT_BASE_URL
 	// A local link is accepted ONLY if we ourselves are targeting a local
 	// backend. Otherwise production would accept a compromised server
 	// sending back a URL to the user's own machine.
-	if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
-		return baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
+	if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+		// On PARSE `baseUrl` aussi, au lieu d'y chercher une sous-chaine. Le
+		// commentaire trois lignes plus haut explique justement pourquoi on ne
+		// lit jamais une URL comme du texte, et cette ligne le faisait :
+		// `https://localhost.exemple.com/api` contient « localhost » sans etre
+		// local, ce qui rouvrait la porte au 127.0.0.1 de l'utilisateur.
+		let base: URL;
+		try {
+			base = new URL(baseUrl);
+		}
+		catch {
+			return false;
+		}
+		return base.hostname === 'localhost' || base.hostname === '127.0.0.1';
+	}
 	return parsed.protocol === 'https:'
 		&& (parsed.hostname === 'stenchill.com' || parsed.hostname === 'www.stenchill.com');
 }
@@ -98,11 +111,7 @@ export async function shareStencil(options: ShareOptions): Promise<string> {
 	// `AbortSignal.any` requires Chromium >= 116, and we don't know the version
 	// the client embeds. With the fallback, the ceiling degrades instead of
 	// breaking sharing.
-	const deadline = AbortSignal.timeout(SHARE_TIMEOUT_MS);
-	const canCompose = typeof AbortSignal.any === 'function';
-	const effective = signal && canCompose
-		? AbortSignal.any([signal, deadline])
-		: (signal ?? deadline);
+	const effective = withDeadline(signal, SHARE_TIMEOUT_MS);
 
 	const body = new FormData();
 	body.append('file', await injectParams(zip, params), 'gerbers.zip');

@@ -5,8 +5,18 @@ import { SseParser } from './sse';
 export const DEFAULT_BASE_URL = 'https://www.stenchill.com/api/v1';
 
 /**
- * Priority marker, NOT a secret: it places the request at priority 0,
- * like the KiCad plugin. Do not treat it as sensitive data.
+ * Cle PUBLIQUE, partagee avec le greffon KiCad, sans valeur d'authentification.
+ *
+ * La formulation precedente disait « marqueur de priorite, PAS un secret, ne
+ * pas la traiter comme une donnee sensible », et elle etait trop rassurante :
+ * vingt lignes plus bas, `fetchLatestVersion` documente que `/api/v1/**` rend
+ * 401 sans elle. C'est donc bien un identifiant, en clair dans un `.eext` que
+ * n'importe qui telecharge, et extractible en trente secondes.
+ *
+ * Ce qui compte n'est pas le mot mais sa consequence, cote SERVEUR : il ne
+ * doit deriver de cette cle ni quota, ni confiance, ni identite. La limitation
+ * de debit se fait par IP. Traiter cette cle comme une preuve d'identite
+ * reviendrait a n'en avoir aucune.
  */
 export const API_KEY = 'stenchill-kicad-2026-xK9mP4wQ7rT2';
 
@@ -30,6 +40,30 @@ export const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
  * against a server that has stopped answering.
  */
 export const VERSION_CHECK_TIMEOUT_MS = 15 * 1000;
+
+/**
+ * A caller's signal AND a deadline, whatever the client supports.
+ *
+ * `AbortSignal.any` needs Chromium >= 116 and we do not know what the EasyEDA
+ * client embeds. The first version fell back to `signal ?? deadline`, which
+ * DROPPED the deadline as soon as a caller passed a signal: on an older
+ * client, the very case the deadline exists for, an intermediary swallowing
+ * the connection, became an infinite wait again. A fallback that discards the
+ * property it is falling back from is not a fallback.
+ *
+ * The manual path keeps both, for six lines.
+ */
+export function withDeadline(signal: AbortSignal | undefined, ms: number): AbortSignal {
+	const deadline = AbortSignal.timeout(ms);
+	if (!signal)
+		return deadline;
+	if (typeof AbortSignal.any === 'function')
+		return AbortSignal.any([signal, deadline]);
+	const relay = new AbortController();
+	for (const source of [signal, deadline])
+		source.addEventListener('abort', () => relay.abort(source.reason), { once: true });
+	return relay.signal;
+}
 
 export class ApiError extends Error {}
 
@@ -108,11 +142,7 @@ export async function generateStencil(options: GenerateOptions): Promise<Generat
 	// floor of the EasyEDA client, and without this fallback an older client
 	// would throw right here: the generation would no longer start at all,
 	// so the timeout would be worse than the flaw it fixes.
-	const deadline = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
-	const canCompose = typeof AbortSignal.any === 'function';
-	const effective = signal && canCompose
-		? AbortSignal.any([signal, deadline])
-		: (signal ?? deadline);
+	const effective = withDeadline(signal, REQUEST_TIMEOUT_MS);
 
 	const body = new FormData();
 	body.append('file', zip, 'gerbers.zip');

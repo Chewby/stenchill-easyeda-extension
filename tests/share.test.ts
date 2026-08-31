@@ -151,3 +151,26 @@ describe('le plafond de delai du partage', () => {
 		}))).rejects.toThrow();
 	});
 });
+
+describe('isTrustedViewUrl et la base locale', () => {
+	/**
+	 * `baseUrl` etait lu en SOUS-CHAINE. Un `baseUrl` valant
+	 * `https://localhost.exemple.com/api` contient « localhost » sans etre
+	 * local, et rouvrait donc la porte au 127.0.0.1 de l'utilisateur. La
+	 * fonction est exportee et documentee comme une garde generique : elle ne
+	 * doit pas dependre du fait que la constante d'aujourd'hui soit sage.
+	 */
+	it('refuse un lien local quand la base seulement CONTIENT localhost', () => {
+		expect(isTrustedViewUrl('http://127.0.0.1:4200/view/x', 'https://localhost.exemple.com/api/v1')).toBe(false);
+		expect(isTrustedViewUrl('http://localhost:4200/view/x', 'https://notlocalhost.com/api/v1')).toBe(false);
+	});
+
+	it('accepte encore un lien local sur une VRAIE base locale', () => {
+		expect(isTrustedViewUrl('http://localhost:4200/view/x', 'http://localhost:8080/api/v1')).toBe(true);
+		expect(isTrustedViewUrl('http://127.0.0.1:4200/view/x', 'http://127.0.0.1:8080/api/v1')).toBe(true);
+	});
+
+	it('refuse quand la base est illisible', () => {
+		expect(isTrustedViewUrl('http://localhost:4200/view/x', 'pas une url')).toBe(false);
+	});
+});

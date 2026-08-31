@@ -160,10 +160,19 @@ describe('generateStencil', () => {
 				signal: controller.signal,
 			});
 			expect(result.stlPath).toBe('abc.zip');
-			// We fall back to the caller's own signal: manual cancellation still
-			// works, only the timeout ceiling is lost.
+			// Le repli garde les DEUX proprietes. La premiere redaction de ce
+			// test enterinait le defaut : elle assertait que le signal passe a
+			// fetch EST celui de l'appelant, ce qui revient a dire que le
+			// plafond de delai a disparu. Or c'est precisement le cas qu'il
+			// existe pour couvrir, un intermediaire qui avale la connexion sur
+			// un client ancien.
 			const calls = (doFetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
-			expect(calls[0][1].signal).toBe(controller.signal);
+			const passe = calls[0][1].signal as AbortSignal;
+			expect(passe).not.toBe(controller.signal);
+			expect(passe.aborted).toBe(false);
+			// et l'annulation de l'appelant traverse toujours le relais.
+			controller.abort(new Error('stop'));
+			expect(passe.aborted).toBe(true);
 		}
 		finally {
 			(AbortSignal as unknown as { any?: unknown }).any = real;
