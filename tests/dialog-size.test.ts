@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { DIALOG_HEIGHT, DIALOG_WIDTH, UPDATE_BAND_HEIGHT, UPDATE_PENDING_KEY } from '../src/dialog-size';
+import { DIALOG_HEIGHT, DIALOG_WIDTH, UPDATE_BAND_HEIGHT, UPDATE_LATEST_KEY } from '../src/dialog-size';
 
 /**
  * The dialog's height is decided by `index.ts`, which opens the window, and
@@ -22,13 +22,33 @@ describe('the dialog size contract', () => {
 		expect(ENTRY).not.toMatch(/openIFrame\([^)]*\b\d{3}\b/);
 	});
 
-	// Les deux cotes lisent la meme clef de stockage : ecrite d'un cote, relue
-	// de l'autre. Deux litteraux distincts laisseraient le drapeau ecrit sous
-	// un nom que personne ne relit, donc une fenetre qui ne grandit jamais.
-	it('reads and writes the flag under one key', () => {
-		expect(ENTRY).toContain('UPDATE_PENDING_KEY');
-		expect(IFRAME).toContain('UPDATE_PENDING_KEY');
-		expect(UPDATE_PENDING_KEY).toBe('updatePending');
+	// One key, written on one side and read on the other. Two separate literals
+	// would leave the answer stored under a name nobody reads back, so a window
+	// that never grows and a band that never shows.
+	it('reads and writes the answer under one key', () => {
+		expect(ENTRY).toContain('UPDATE_LATEST_KEY');
+		expect(IFRAME).toContain('UPDATE_LATEST_KEY');
+		expect(UPDATE_LATEST_KEY).toBe('updateLatest');
+	});
+
+	/**
+	 * The check must run in the ENTRY POINT and not in the iframe, and that is
+	 * not a preference: `openIFrame` takes the height as an argument and
+	 * nothing can change it afterwards, so a check made inside the page always
+	 * arrives after the height is settled. An earlier version did exactly that
+	 * and the first open after a new version appeared still scrolled.
+	 */
+	it('asks before opening, and the page only reads the answer', () => {
+		// On asserte sur l'APPEL et sur son argument, pas sur les mots : les deux
+		// noms figurent aussi dans le commentaire au-dessus, et une assertion sur
+		// le mot nu restait verte alors que l'appel employait le plafond long.
+		// Vu ne PAS rougir a la mutation, ce qui est la seule facon de s'en
+		// apercevoir.
+		expect(ENTRY).toMatch(/fetchLatestVersion\([\s\S]*?PREOPEN_VERSION_TIMEOUT_MS[\s\S]*?\)/);
+		// On cherche un APPEL et non le mot : un commentaire qui nomme la
+		// fonction est legitime, et une assertion sur le mot nu ferait rougir
+		// le test pour une phrase.
+		expect(IFRAME).not.toMatch(/\bfetchLatestVersion\(/);
 	});
 
 	it('keeps the band height positive and the window plausible', () => {

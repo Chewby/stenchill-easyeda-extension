@@ -6,11 +6,12 @@
  * being available there in full (measured on 2026-08-30). See
  * `src/iframe-app.ts`.
  */
-import { DIALOG_HEIGHT, DIALOG_WIDTH, UPDATE_BAND_HEIGHT, UPDATE_PENDING_KEY } from './dialog-size';
+import { API_KEY, DEFAULT_BASE_URL, fetchLatestVersion, isNewer, PREOPEN_VERSION_TIMEOUT_MS } from './api-client';
+import { DIALOG_HEIGHT, DIALOG_WIDTH, UPDATE_BAND_HEIGHT, UPDATE_LATEST_KEY } from './dialog-size';
 import { DICTS } from './dicts';
 import { resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
-import { VERSION } from './version';
+import { USER_AGENT, VERSION } from './version';
 
 /*
  * There is no `activate` here any more, and no `activationEvents` in
@@ -28,15 +29,35 @@ import { VERSION } from './version';
  * call every time EasyEDA launches, whether or not anyone opens a PCB.
  */
 
+/**
+ * Opens the dialog, after asking whether a newer version exists.
+ *
+ * The order is forced by the SDK, not chosen: `openIFrame` takes the height as
+ * an argument and nothing can change it afterwards, so the answer has to be in
+ * hand before the window exists. The answer is then left in storage for the
+ * page to read, which keeps the whole feature down to a single network call.
+ *
+ * Nothing here can prevent the dialog from opening: `fetchLatestVersion`
+ * returns null on any anomaly, the storage write is swallowed, and the check
+ * gives up after `PREOPEN_VERSION_TIMEOUT_MS`, which is short precisely
+ * because the user is waiting on a window that has not appeared yet.
+ */
 export function openDialog(): void {
 	void (async () => {
 		let pending = false;
 		try {
-			pending = await eda.sys_Storage.getExtensionUserConfig(UPDATE_PENDING_KEY) === true;
+			const latest = await fetchLatestVersion(
+				fetch,
+				DEFAULT_BASE_URL,
+				USER_AGENT,
+				API_KEY,
+				PREOPEN_VERSION_TIMEOUT_MS,
+			);
+			pending = latest !== null && isNewer(latest, VERSION);
+			await eda.sys_Storage.setExtensionUserConfig(UPDATE_LATEST_KEY, pending ? latest : null);
 		}
 		catch {
-			// An unreadable flag must not prevent opening the dialog. The worst
-			// it costs is a scrollbar.
+			// A version check must never cost the user their dialog.
 		}
 		const height = DIALOG_HEIGHT + (pending ? UPDATE_BAND_HEIGHT : 0);
 		eda.sys_IFrame.openIFrame('/iframe/index.html', DIALOG_WIDTH, height, IFRAME_ID);

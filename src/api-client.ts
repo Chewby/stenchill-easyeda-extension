@@ -31,6 +31,16 @@ export const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
  */
 export const VERSION_CHECK_TIMEOUT_MS = 15 * 1000;
 
+/**
+ * Deadline when the check runs BEFORE the dialog opens.
+ *
+ * Far shorter, and for a different reason: here the user is waiting on a
+ * window that has not appeared yet. A menu item that does nothing for fifteen
+ * seconds reads as broken. Past this delay the dialog opens without the band,
+ * which costs nothing but a notice deferred to the next open.
+ */
+export const PREOPEN_VERSION_TIMEOUT_MS = 2500;
+
 export class ApiError extends Error {}
 
 /**
@@ -224,6 +234,7 @@ export async function fetchLatestVersion(
 	baseUrl: string,
 	userAgent: string,
 	apiKey: string,
+	timeoutMs: number = VERSION_CHECK_TIMEOUT_MS,
 ): Promise<string | null> {
 	try {
 		const response = await fetchImpl(`${baseUrl}/plugin/easyeda/version`, {
@@ -232,7 +243,7 @@ export async function fetchLatestVersion(
 			// startup, nobody waits on it, and without a ceiling it holds a
 			// connection open for as long as the server stays silent. Its
 			// failure is already inconsequential, `catch` returns `null`.
-			signal: AbortSignal.timeout(VERSION_CHECK_TIMEOUT_MS),
+			signal: AbortSignal.timeout(timeoutMs),
 		});
 		if (!response.ok)
 			return null;

@@ -9,8 +9,8 @@ import type { Dict } from './i18n';
  * talks to the server itself. `src/index.ts` now only opens this page.
  */
 import type { GenerationParams } from './params';
-import { API_KEY, ApiError, DEFAULT_BASE_URL, fetchLatestVersion, generateStencil, isNewer } from './api-client';
-import { UPDATE_PENDING_KEY } from './dialog-size';
+import { API_KEY, ApiError, DEFAULT_BASE_URL, generateStencil } from './api-client';
+import { UPDATE_LATEST_KEY } from './dialog-size';
 import { DICTS } from './dicts';
 import { exportPasteGerbers } from './exporter';
 import { stencilFileName } from './filename';
@@ -18,7 +18,7 @@ import { localizeDocument, resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
 import { clampParams, DEFAULT_PARAMS } from './params';
 import { shareStencil } from './share';
-import { USER_AGENT, VERSION } from './version';
+import { USER_AGENT } from './version';
 
 // No `declare const eda` here: @jlceda/pro-api-types already declares the
 // global `const eda: EDA`, and it is in the tsconfig's include. Redeclaring
@@ -456,26 +456,29 @@ void applyTheme();
  * fired while EasyEDA was still starting up, so nobody ever saw it. The KiCad
  * plugin puts a persistent band in its own dialog for the same reason.
  *
- * Silent on every anomaly, by design: `fetchLatestVersion` returns null rather
- * than throwing, and a version check that gets in the way is worse than none.
+ * Silent on every anomaly, by design: an unreadable answer simply means no
+ * band, and a version check that gets in the way is worse than none.
  */
 async function checkForUpdate(): Promise<void> {
-	const latest = await fetchLatestVersion(fetch, DEFAULT_BASE_URL, USER_AGENT, API_KEY);
-	const pending = Boolean(latest) && isNewer(latest as string, VERSION);
-	// Memorise pour la PROCHAINE ouverture, qui doit choisir sa hauteur avant
-	// que cette page n'existe. L'echec est sans consequence : au pire une barre
-	// de defilement.
-	await eda.sys_Storage.setExtensionUserConfig(UPDATE_PENDING_KEY, pending).catch(() => {});
-	if (!pending)
+	// On LIT le verdict, on ne le redemande pas : `openDialog` a deja pose la
+	// question, parce que lui seul pouvait encore choisir la hauteur de la
+	// fenetre. Redemander ici doublerait l'appel reseau et pourrait rendre une
+	// autre reponse, donc un bandeau qui ne correspond plus a la place reservee.
+	let latest: string | null = null;
+	try {
+		const saved = await eda.sys_Storage.getExtensionUserConfig(UPDATE_LATEST_KEY);
+		latest = typeof saved === 'string' ? saved : null;
+	}
+	catch {
+		// Rien a annoncer, et surtout rien a interrompre.
+	}
+	if (!latest)
 		return;
-	el('updateText').textContent = t('New version ${1} available', latest as string);
+	el('updateText').textContent = t('New version ${1} available', latest);
 	const link = el('updateLink') as HTMLAnchorElement;
 	link.textContent = t('Download');
 	link.onclick = (event) => {
 		event.preventDefault();
-		// La page du SITE et non la page des releases : elle explique, elle
-		// porte le bouton de telechargement, et le greffon est un canal vers
-		// le site. Dans la langue du client quand le site la parle.
 		openAndShow(`https://www.stenchill.com/${locale}/easyeda-extension`);
 	};
 	el('update').style.display = 'block';

@@ -7,12 +7,11 @@
  * height is therefore decided before the page that knows whether the update
  * band will show even exists.
  *
- * Hence the flag: the iframe records what its version check found, and the
- * next open reads it back. The consequence is worth stating plainly, because
- * it is a real limitation and not an oversight: the FIRST open after a new
- * version appears is still the short one, so it scrolls once. Every open after
- * that is tall enough, and the window shrinks back on its own once the update
- * is installed and the check stops finding anything.
+ * So the check runs BEFORE the window opens, in the entry point, and its
+ * answer is handed to the iframe through storage. An earlier version had the
+ * iframe check for itself and remember the verdict for NEXT time, which meant
+ * the first open after a new version appeared still scrolled. Asking first
+ * costs a short wait on the menu click and removes that case entirely.
  *
  * Both values live here rather than in the two files that use them: they are a
  * contract between the extension entry point, which sizes the window, and the
@@ -20,8 +19,16 @@
  * scrollbar nobody connects back to a number.
  */
 
-/** Key under which the last version check's verdict is kept. */
-export const UPDATE_PENDING_KEY = 'updatePending';
+/**
+ * Key under which the version check leaves its answer for the iframe.
+ *
+ * It holds the latest published version as a string, or null when there is
+ * nothing newer. The check runs in the entry point, BEFORE the window opens,
+ * because that is the only moment its height can still be chosen; the iframe
+ * then reads the answer instead of asking again, which also keeps the whole
+ * feature down to one network call.
+ */
+export const UPDATE_LATEST_KEY = 'updateLatest';
 
 /** The dialog with nothing special to say. */
 export const DIALOG_WIDTH = 555;
