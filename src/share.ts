@@ -66,11 +66,11 @@ export function isTrustedViewUrl(url: string, baseUrl: string = DEFAULT_BASE_URL
 	// backend. Otherwise production would accept a compromised server
 	// sending back a URL to the user's own machine.
 	if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
-		// On PARSE `baseUrl` aussi, au lieu d'y chercher une sous-chaine. Le
-		// commentaire trois lignes plus haut explique justement pourquoi on ne
-		// lit jamais une URL comme du texte, et cette ligne le faisait :
-		// `https://localhost.exemple.com/api` contient « localhost » sans etre
-		// local, ce qui rouvrait la porte au 127.0.0.1 de l'utilisateur.
+		// We PARSE `baseUrl` too, instead of looking for a substring in it. The
+		// comment three lines above explains precisely why we never read a URL
+		// as text, and this line was doing exactly that:
+		// `https://localhost.example.com/api` contains "localhost" without being
+		// local, which reopened the door to the user's own 127.0.0.1.
 		let base: URL;
 		try {
 			base = new URL(baseUrl);
@@ -107,10 +107,10 @@ export const SHARE_TIMEOUT_MS = 2 * 60 * 1000;
 export async function shareStencil(options: ShareOptions): Promise<string> {
 	const { zip, params, fetchImpl, baseUrl, apiKey, userAgent, signal } = options;
 
-	// Annulation de l'appelant ET plafond de delai : voir `withDeadline`, qui
-	// porte le pourquoi. Le commentaire d'ici disait « le plafond se DEGRADE »,
-	// ce qui decrivait la version d'avant : il ne se degrade plus, c'est tout
-	// le sens de ce correctif.
+	// The caller's cancellation AND a deadline ceiling: see `withDeadline`,
+	// which carries the why. The comment here used to say "the ceiling is
+	// DROPPED", which described the previous version: it is no longer dropped,
+	// and that is the whole point of this fix.
 	const effective = withDeadline(signal, SHARE_TIMEOUT_MS);
 
 	const body = new FormData();

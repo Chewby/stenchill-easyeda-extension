@@ -47,5 +47,6 @@
 	"Download": "Download",
 	"Turns the paste layers of your board into a stencil you can print on a normal FDM printer, with no manual Gerber export.": "Turns the paste layers of your board into a stencil you can print on a normal FDM printer, with no manual Gerber export.",
 	"MIT licensed. Source on GitHub.": "MIT licensed. Source on GitHub.",
-	"Cancelling...": "Cancelling..."
+	"Cancelling...": "Cancelling...",
+	"More information about": "More information about"
 }

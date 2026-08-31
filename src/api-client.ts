@@ -5,18 +5,18 @@ import { SseParser } from './sse';
 export const DEFAULT_BASE_URL = 'https://www.stenchill.com/api/v1';
 
 /**
- * Cle PUBLIQUE, partagee avec le greffon KiCad, sans valeur d'authentification.
+ * PUBLIC key, shared with the KiCad plugin, with no authentication value.
  *
- * La formulation precedente disait « marqueur de priorite, PAS un secret, ne
- * pas la traiter comme une donnee sensible », et elle etait trop rassurante :
- * vingt lignes plus bas, `fetchLatestVersion` documente que `/api/v1/**` rend
- * 401 sans elle. C'est donc bien un identifiant, en clair dans un `.eext` que
- * n'importe qui telecharge, et extractible en trente secondes.
+ * The previous wording said "priority marker, NOT a secret, do not treat it as
+ * sensitive data", and it was too reassuring: twenty lines below,
+ * `fetchLatestVersion` documents that `/api/v1/**` answers 401 without it. So
+ * it really is a credential, in clear text inside a `.eext` anyone can
+ * download, and extractable in thirty seconds.
  *
- * Ce qui compte n'est pas le mot mais sa consequence, cote SERVEUR : il ne
- * doit deriver de cette cle ni quota, ni confiance, ni identite. La limitation
- * de debit se fait par IP. Traiter cette cle comme une preuve d'identite
- * reviendrait a n'en avoir aucune.
+ * What matters is not the word but its consequence, on the SERVER side:
+ * nothing must be derived from this key, no quota, no trust, no identity. Rate
+ * limiting is done by IP. Treating this key as proof of identity would amount
+ * to having none at all.
  */
 export const API_KEY = 'stenchill-kicad-2026-xK9mP4wQ7rT2';
 
@@ -133,7 +133,7 @@ function asInt(value: unknown, fallback: number): number {
 export async function generateStencil(options: GenerateOptions): Promise<GenerateResult> {
 	const { zip, params, fetchImpl, baseUrl, apiKey, userAgent, onProgress, onQueued, signal } = options;
 
-	// Annulation de l'appelant ET plafond de delai, voir `withDeadline`.
+	// The caller's cancellation AND a deadline ceiling, see `withDeadline`.
 	const effective = withDeadline(signal, REQUEST_TIMEOUT_MS);
 
 	const body = new FormData();

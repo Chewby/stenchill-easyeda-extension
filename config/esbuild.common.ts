@@ -6,14 +6,14 @@ export default {
 	},
 	entryNames: '[name]',
 	assetNames: '[name]',
-	bundle: true, // 用于内部方法调用，请勿修改
-	minify: false, // 用于内部方法调用，请勿修改
+	bundle: true, // Used by internal method calls, do not modify.
+	minify: false, // Used by internal method calls, do not modify.
 	loader: {},
 	outdir: './dist/',
 	sourcemap: undefined,
-	platform: 'browser', // 用于内部方法调用，请勿修改
-	format: 'iife', // 用于内部方法调用，请勿修改
-	globalName: 'edaEsbuildExportName', // 用于内部方法调用，请勿修改
+	platform: 'browser', // Used by internal method calls, do not modify.
+	format: 'iife', // Used by internal method calls, do not modify.
+	globalName: 'edaEsbuildExportName', // Used by internal method calls, do not modify.
 	treeShaking: true,
 	ignoreAnnotations: true,
 	define: {},

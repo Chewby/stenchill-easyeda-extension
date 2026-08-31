@@ -4,14 +4,14 @@ import ignore from 'ignore';
 import JSZip from 'jszip';
 
 /**
- * 将多行字符串拆分成字符串数组
+ * Split a multi-line string into an array of strings
  */
 export function multiLineStrToArray(str: string): Array<string> {
 	return str.split(/[\r\n]+/);
 }
 
 /**
- * 检查 UUID 是否合法
+ * Check whether the UUID is valid
  */
 export function testUuid(uuid?: string): uuid is string {
 	const regExp = /^[a-z0-9]{32}$/;
@@ -24,7 +24,7 @@ export function testUuid(uuid?: string): uuid is string {
 }
 
 /**
- * 获取正确的 UUID
+ * Get a valid UUID
  */
 export function fixUuid(uuid?: string): string {
 	uuid = uuid?.trim() || undefined;
@@ -37,7 +37,7 @@ export function fixUuid(uuid?: string): string {
 }
 
 /**
- * 获取要打包的文件列表
+ * Get the list of files to package
  */
 export function getPackageFileList(rootDir: string): Array<string> {
 	const filepathListWithoutFilter = fs.readdirSync(rootDir, { encoding: 'utf-8', recursive: true });
@@ -63,7 +63,7 @@ export function getPackageFileList(rootDir: string): Array<string> {
 }
 
 /**
- * 打包扩展为 eext 文件
+ * Package the extension into an eext file
  */
 export async function packageExtension(rootDir: string, outputPath: string): Promise<void> {
 	const fileList = getPackageFileList(rootDir);

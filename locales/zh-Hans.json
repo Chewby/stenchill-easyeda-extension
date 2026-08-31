@@ -47,5 +47,6 @@
 	"Download": "下载",
 	"Turns the paste layers of your board into a stencil you can print on a normal FDM printer, with no manual Gerber export.": "把 PCB 的锡膏层变成可以用普通 FDM 打印机打印的钢网，无需手动导出 Gerber。",
 	"MIT licensed. Source on GitHub.": "采用 MIT 许可，源码在 GitHub 上。",
-	"Cancelling...": "正在取消…"
+	"Cancelling...": "正在取消…",
+	"More information about": "更多信息："
 }

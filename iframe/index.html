@@ -36,12 +36,12 @@
 
 		* { box-sizing: border-box; }
 
-		/* Colonne pleine hauteur : c'est ce qui POUSSE la barre du bas tout en
-		   bas. `position: sticky` seul ne le fait pas, il ne s'active qu'en cas
-		   de debordement, donc sur une fenetre plus haute que son contenu la
-		   barre restait collee au dernier champ avec du vide en dessous.
-		   `border-box` est indispensable ici : sans lui la marge interieure
-		   s'ajoute aux 100vh et fabrique le debordement qu'on veut eviter. */
+		/* Full-height column: this is what PUSHES the bottom bar all the way
+		   down. `position: sticky` alone does not do it, it only kicks in on
+		   overflow, so on a window taller than its content the bar stayed
+		   stuck to the last field with empty space below it.
+		   `border-box` is essential here: without it the inner padding adds
+		   up to the 100vh and manufactures the very overflow we want to avoid. */
 		body {
 			font: 13px/1.45 system-ui, -apple-system, sans-serif;
 			margin: 0;
@@ -54,8 +54,8 @@
 			flex-direction: column;
 		}
 
-		/* Le formulaire porte la barre du bas, donc c'est LUI qui doit occuper
-		   la hauteur restante pour pouvoir l'y repousser. */
+		/* The form carries the bottom bar, so IT is the one that must take up
+		   the remaining height in order to push the bar down there. */
 		#form {
 			display: flex;
 			flex-direction: column;
@@ -97,12 +97,12 @@
 		.info {
 			position: relative;
 			font-family: inherit;
-			/* `padding: 0` est PORTEUR, pas cosmetique : la regle `button` plus
-			   bas impose 6px 13px, et en border-box 13px de chaque cote font un
-			   plancher de largeur de 28px pour 15px de haut. La pastille sortait
-			   donc en ellipse etiree. La specificite de `.info` l'emporte sur
-			   `button` quel que soit l'ordre des regles, mais encore faut-il
-			   ecrire la declaration. */
+			/* `padding: 0` is LOAD-BEARING, not cosmetic: the `button` rule
+			   further down imposes 6px 13px, and in border-box 13px on each
+			   side make a width floor of 28px for 15px of height. The badge
+			   therefore came out as a stretched ellipse. The specificity of
+			   `.info` beats `button` whatever the order of the rules, but the
+			   declaration still has to be written. */
 			padding: 0;
 			line-height: 1;
 			display: inline-flex;
@@ -124,11 +124,11 @@
 		   and two pseudo-elements do not form a single box.
 		   The native `title` attribute shows NOTHING in this client (measured
 		   on 2026-08-30), and help that does not show does not exist. */
-		/* Compact a dessein : la hauteur de la fenetre est FIGEE a l'ouverture
-		   (`openIFrame(..., 555, 690)`) et le SDK n'expose aucun redimensionnement,
-		   donc chaque pixel pris ici sort en bas et fait apparaitre une barre de
-		   defilement. D'ou une seule ligne, sans marge propre : le bandeau se loge
-		   dans la marge basse que l'en-tete reservait deja. */
+		/* Compact on purpose: the window height is FROZEN at open time
+		   (`openIFrame(..., 555, 690)`) and the SDK exposes no resizing, so
+		   every pixel taken here spills out at the bottom and brings up a
+		   scrollbar. Hence a single line, with no margin of its own: the
+		   banner fits into the bottom margin the header already reserved. */
 		#update {
 			margin: 6px 0 -2px;
 			padding: 3px 10px;
@@ -140,9 +140,9 @@
 			text-align: center;
 		}
 
-		/* Le lien heritait du bleu par defaut du navigateur, illisible sur le
-		   fond sombre du bandeau. Il prend la couleur d'accent, comme les autres
-		   liens de la page, et du gras pour se detacher du texte a cote. */
+		/* The link inherited the browser's default blue, unreadable on the
+		   banner's dark background. It takes the accent color, like the other
+		   links on the page, plus bold to stand out from the text next to it. */
 		#update a {
 			margin-left: 8px;
 			color: var(--accent);
@@ -189,10 +189,10 @@
 			display: flex;
 			align-items: center;
 			gap: 8px;
-			/* `auto` et non une valeur fixe : c'est ce qui mange l'espace libre
-			   et pose la barre au ras du bas. Quand il n'y a plus rien a manger
-			   elle tombe a zero, et c'est la marge interieure de 10px qui garde
-			   l'ecart avec le trait de separation. */
+			/* `auto` and not a fixed value: this is what eats the free space
+			   and lays the bar flush with the bottom. When there is nothing
+			   left to eat it falls to zero, and it is the 10px padding that
+			   keeps the gap with the separator line. */
 			margin-top: auto;
 			padding-top: 10px;
 			border-top: 1px solid var(--border);
@@ -229,11 +229,11 @@
 		<p>Export paste layers from your PCB and generate STL and 3MF files</p>
 		<p><a id="site" href="#">stenchill.com</a></p>
 
-		<!-- Bandeau de mise a jour, masque tant qu'il n'y a rien a dire.
-		     Persistant et non fugace : le greffon KiCad fait pareil, et un toast
-		     de 3 secondes au demarrage du client passe sous les yeux de personne.
-		     Place DANS l'en-tete pour partager sa bordure basse plutot que d'en
-		     ajouter une seconde. -->
+		<!-- Update banner, hidden as long as there is nothing to say.
+		     Persistent and not fleeting: the KiCad plugin does the same, and a
+		     3 second toast at client startup goes past nobody's eyes.
+		     Placed INSIDE the header so it shares its bottom border rather than
+		     adding a second one. -->
 		<div id="update" style="display:none">
 			<span id="updateText"></span>
 			<a id="updateLink" href="#">Download</a>
@@ -244,13 +244,13 @@
 		<fieldset>
 			<legend>Printability</legend>
 			<div class="row">
-				<label for="enableSlotify">Merge close pads</label>
-				<button type="button" class="info" data-tip="When pads are too close for the nozzle, fuses each row into a single slot to avoid walls thinner than the nozzle that won't print correctly.">i</button>
+				<label for="enableSlotify" id="lbl-enableSlotify">Merge close pads</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-enableSlotify" data-tip="When pads are too close for the nozzle, fuses each row into a single slot to avoid walls thinner than the nozzle that won't print correctly.">i</button>
 				<input id="enableSlotify" type="checkbox" checked />
 			</div>
 			<div class="row">
-				<label for="dropUnprintableGrids">Fill in unprintable grids</label>
-				<button type="button" class="info" data-tip="A fine-pitch BGA has walls thinner than your nozzle. Left as openings, filling them in costs nothing; on an LGA you will need a finer nozzle.">i</button>
+				<label for="dropUnprintableGrids" id="lbl-dropUnprintableGrids">Fill in unprintable grids</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-dropUnprintableGrids" data-tip="A fine-pitch BGA has walls thinner than your nozzle. Left as openings, filling them in costs nothing; on an LGA you will need a finer nozzle.">i</button>
 				<input id="dropUnprintableGrids" type="checkbox" checked />
 			</div>
 		</fieldset>
@@ -258,18 +258,18 @@
 		<fieldset>
 			<legend>Stencil</legend>
 			<div class="row">
-				<label for="thickness">Thickness (mm)</label>
-				<button type="button" class="info" data-tip="Stencil thickness. Defines the solder paste deposit.">i</button>
+				<label for="thickness" id="lbl-thickness">Thickness (mm)</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-thickness" data-tip="Stencil thickness. Defines the solder paste deposit.">i</button>
 				<input id="thickness" type="number" inputmode="decimal" step="0.05" min="0.1" max="0.6" value="0.40" />
 			</div>
 			<div class="row">
-				<label for="shrink">Shrink (mm)</label>
-				<button type="button" class="info" data-tip="Reduces every opening by this amount. A negative value enlarges them.">i</button>
+				<label for="shrink" id="lbl-shrink">Shrink (mm)</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-shrink" data-tip="Reduces every opening by this amount. A negative value enlarges them.">i</button>
 				<input id="shrink" type="number" inputmode="decimal" step="0.05" min="-0.2" max="0.3" value="0.00" />
 			</div>
 			<div class="row">
-				<label for="nozzleDiameter">Nozzle (mm)</label>
-				<button type="button" class="info" data-tip="Your 3D printer nozzle size - 0.2 mm recommended for best results.">i</button>
+				<label for="nozzleDiameter" id="lbl-nozzleDiameter">Nozzle (mm)</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-nozzleDiameter" data-tip="Your 3D printer nozzle size - 0.2 mm recommended for best results.">i</button>
 				<input id="nozzleDiameter" type="number" inputmode="decimal" step="0.05" min="0.1" max="0.8" value="0.40" />
 			</div>
 			<p class="hint">0.2 mm recommended</p>
@@ -278,28 +278,28 @@
 		<fieldset>
 			<legend>Alignment</legend>
 			<div class="row">
-				<label for="enableShoulders">Shoulders</label>
-				<button type="button" class="info" data-tip="Adds supports to hold the PCB and align the stencil.">i</button>
+				<label for="enableShoulders" id="lbl-enableShoulders">Shoulders</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-enableShoulders" data-tip="Adds supports to hold the PCB and align the stencil.">i</button>
 				<input id="enableShoulders" type="checkbox" checked />
 			</div>
 			<div class="row">
-				<label for="pcbThickness">PCB thickness (mm)</label>
-				<button type="button" class="info" data-tip="Thickness of your board. Sets how tall the shoulders are.">i</button>
+				<label for="pcbThickness" id="lbl-pcbThickness">PCB thickness (mm)</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-pcbThickness" data-tip="Thickness of your board. Sets how tall the shoulders are.">i</button>
 				<input id="pcbThickness" type="number" inputmode="decimal" step="0.1" min="0.4" max="3.2" value="1.60" />
 			</div>
 			<div class="row">
-				<label for="shoulderLength">Length (mm)</label>
-				<button type="button" class="info" data-tip="How far each L-bracket runs along the board edge.">i</button>
+				<label for="shoulderLength" id="lbl-shoulderLength">Length (mm)</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-shoulderLength" data-tip="How far each L-bracket runs along the board edge.">i</button>
 				<input id="shoulderLength" type="number" inputmode="decimal" step="1" min="1" max="200" value="15" />
 			</div>
 			<div class="row">
-				<label for="shoulderWidth">Width (mm)</label>
-				<button type="button" class="info" data-tip="Wall thickness of the L-brackets.">i</button>
+				<label for="shoulderWidth" id="lbl-shoulderWidth">Width (mm)</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-shoulderWidth" data-tip="Wall thickness of the L-brackets.">i</button>
 				<input id="shoulderWidth" type="number" inputmode="decimal" step="0.5" min="0.5" max="8" value="3.00" />
 			</div>
 			<div class="row">
-				<label for="shoulderClearance">Clearance (mm)</label>
-				<button type="button" class="info" data-tip="Gap left between the board and the shoulder walls.">i</button>
+				<label for="shoulderClearance" id="lbl-shoulderClearance">Clearance (mm)</label>
+				<button type="button" class="info" aria-labelledby="infoWord lbl-shoulderClearance" data-tip="Gap left between the board and the shoulder walls.">i</button>
 				<input id="shoulderClearance" type="number" inputmode="decimal" step="0.05" min="0" max="1" value="0.30" />
 			</div>
 		</fieldset>
@@ -326,7 +326,8 @@
 		</footer>
 	</form>
 
-	<div id="tip"><b id="tipTitle"></b><span id="tipText"></span></div>
-	<script src="/iframe/app.js"></script>
+	<span id="infoWord" hidden>More information about</span>
+	<div id="tip" role="tooltip" aria-live="polite"><b id="tipTitle"></b><span id="tipText"></span></div>
+	<script src="app.js"></script>
 </body>
 </html>

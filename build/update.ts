@@ -18,7 +18,7 @@ const GITHUB_BASE_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GIT
 const GITEE_BASE_URL = `https://raw.giteeusercontent.com/${GITEE_OWNER}/${GITEE_REPO}/raw/${GITEE_BRANCH}`;
 
 /**
- * 获取本地 manifest
+ * Reads the local manifest.
  */
 function getLocalManifest(): { version: string; frameworkFiles: string[] } | null {
 	const manifestPath = path.join(__dirname, '../.sdk-manifest.json');
@@ -29,7 +29,7 @@ function getLocalManifest(): { version: string; frameworkFiles: string[] } | nul
 }
 
 /**
- * 从指定 URL 获取 JSON
+ * Fetches JSON from the given URL.
  */
 async function fetchJson<T>(url: string): Promise<T | null> {
 	try {
@@ -45,7 +45,7 @@ async function fetchJson<T>(url: string): Promise<T | null> {
 }
 
 /**
- * 从指定 URL 获取文本
+ * Fetches text from the given URL.
  */
 async function fetchText(url: string): Promise<string | null> {
 	try {
@@ -61,10 +61,10 @@ async function fetchText(url: string): Promise<string | null> {
 }
 
 /**
- * 获取远程 manifest（带回退）
+ * Fetches the remote manifest, with a fallback.
  */
 async function getRemoteManifest(): Promise<{ version: string; frameworkFiles: string[] } | null> {
-	// 先尝试 GitHub
+	// GitHub first.
 	const githubUrl = `${GITHUB_BASE_URL}/.sdk-manifest.json`;
 	let manifest = await fetchJson<{ version: string; frameworkFiles: string[] }>(githubUrl);
 
@@ -73,7 +73,7 @@ async function getRemoteManifest(): Promise<{ version: string; frameworkFiles: s
 		return manifest;
 	}
 
-	// GitHub 失败，回退到 Gitee
+	// GitHub failed, fall back to Gitee.
 	console.log('[GitHub] Failed to fetch manifest, trying Gitee...');
 	const giteeUrl = `${GITEE_BASE_URL}/.sdk-manifest.json`;
 	manifest = await fetchJson<{ version: string; frameworkFiles: string[] }>(giteeUrl);
@@ -88,12 +88,12 @@ async function getRemoteManifest(): Promise<{ version: string; frameworkFiles: s
 }
 
 /**
- * 智能合并 package.json
+ * Merge package.json field by field.
  */
 function mergePackageJson(local: any, remote: any): any {
 	const result = { ...local };
 
-	// 版本号使用远程
+	// Use the remote version number.
 	// The version is OURS, never the upstream template's. This line used to read
 	// `result.version = remote.version` and silently broke the three-place
 	// contract (src/version.ts, extension.json, package.json): that is exactly
@@ -109,7 +109,7 @@ function mergePackageJson(local: any, remote: any): any {
 	// version away.
 	result.scripts = { ...local.scripts };
 
-	// 合并 devDependencies（远程覆盖本地）
+	// Merge devDependencies, remote wins over local.
 	if (remote.devDependencies) {
 		result.devDependencies = {
 			...local.devDependencies,
@@ -117,7 +117,7 @@ function mergePackageJson(local: any, remote: any): any {
 		};
 	}
 
-	// 合并 dependencies（远程覆盖本地）
+	// Merge dependencies, remote wins over local.
 	if (remote.dependencies) {
 		result.dependencies = {
 			...local.dependencies,
@@ -129,10 +129,10 @@ function mergePackageJson(local: any, remote: any): any {
 }
 
 /**
- * 下载文件（带回退）
+ * Downloads one file, with a fallback.
  */
 async function downloadFile(filePath: string): Promise<boolean> {
-	// 先尝试 GitHub
+	// GitHub first.
 	const githubUrl = `${GITHUB_BASE_URL}/${filePath}`;
 	let content = await fetchText(githubUrl);
 
@@ -140,7 +140,7 @@ async function downloadFile(filePath: string): Promise<boolean> {
 		console.log(`[GitHub] Downloaded: ${filePath}`);
 	}
 	else {
-		// GitHub 失败，回退到 Gitee
+		// GitHub failed, fall back to Gitee.
 		console.log(`[GitHub] Download failed, trying Gitee: ${filePath}`);
 		const giteeUrl = `${GITEE_BASE_URL}/${filePath}`;
 		content = await fetchText(giteeUrl);
@@ -161,7 +161,7 @@ async function downloadFile(filePath: string): Promise<boolean> {
 }
 
 /**
- * 检查更新
+ * Checks for an update.
  */
 async function checkUpdate(): Promise<{ hasUpdate: boolean; localVersion: string | null; remoteVersion: string | null }> {
 	const localManifest = getLocalManifest();
@@ -190,7 +190,7 @@ async function checkUpdate(): Promise<{ hasUpdate: boolean; localVersion: string
 }
 
 /**
- * 执行更新
+ * Performs the update.
  */
 async function performUpdate() {
 	const localManifest = getLocalManifest();
@@ -201,7 +201,7 @@ async function performUpdate() {
 		return false;
 	}
 
-	// 检查是否有更新
+	// Is there anything to update?
 	if (localManifest && localManifest.version === remoteManifest.version) {
 		console.log(`Already up to date: ${localManifest.version}`);
 		return true;
@@ -209,16 +209,16 @@ async function performUpdate() {
 
 	console.log(`Starting update: ${localManifest?.version ?? 'unknown'} → ${remoteManifest.version}`);
 
-	// 备份 package.json
+	// Back up package.json.
 	const packageJsonPath = path.join(__dirname, '../package.json');
 	const packageJsonBackupPath = path.join(__dirname, '../package.json.backup');
 	fs.copySync(packageJsonPath, packageJsonBackupPath);
 	console.log('Backed up package.json → package.json.backup');
 
-	// 智能合并 package.json
+	// Merge package.json field by field.
 	const localPackageJson = fs.readJsonSync(packageJsonPath);
 
-	// 先尝试 GitHub 获取 package.json
+	// Try GitHub first for package.json.
 	let remotePackageJson = await fetchJson<any>(`${GITHUB_BASE_URL}/package.json`);
 	if (!remotePackageJson) {
 		console.log('[GitHub] Failed to fetch package.json, trying Gitee...');
@@ -234,7 +234,7 @@ async function performUpdate() {
 	fs.writeJsonSync(packageJsonPath, mergedPackageJson, { spaces: '\t', EOL: '\n' });
 	console.log('Merged package.json');
 
-	// 下载框架文件
+	// Download the framework files.
 	const frameworkFiles = remoteManifest.frameworkFiles ?? [];
 	for (const file of frameworkFiles) {
 		const success = await downloadFile(file);
@@ -243,7 +243,7 @@ async function performUpdate() {
 		}
 	}
 
-	// 更新 manifest
+	// Update the manifest.
 	fs.writeJsonSync(path.join(__dirname, '../.sdk-manifest.json'), remoteManifest, { spaces: '\t', EOL: '\n' });
 	console.log('Updated .sdk-manifest.json');
 
@@ -252,7 +252,7 @@ async function performUpdate() {
 }
 
 /**
- * 主函数
+ * Entry point.
  */
 async function main() {
 	const args = process.argv.slice(2);

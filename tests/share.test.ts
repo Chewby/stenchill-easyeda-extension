@@ -11,38 +11,38 @@ async function makeZip(): Promise<Blob> {
 }
 
 describe('isTrustedViewUrl', () => {
-	it('accepte la production', () => {
+	it('accepts production', () => {
 		expect(isTrustedViewUrl('https://stenchill.com/view/abc')).toBe(true);
 		expect(isTrustedViewUrl('https://www.stenchill.com/view/abc')).toBe(true);
 	});
 
-	it('accepte un lien local SEULEMENT si l on tape un backend local', () => {
+	it('accepts a local link ONLY when hitting a local backend', () => {
 		const local = 'http://localhost:8080/api/v1';
 		expect(isTrustedViewUrl('http://localhost:4200/view/abc', local)).toBe(true);
 		expect(isTrustedViewUrl('http://127.0.0.1:8080/view/abc', local)).toBe(true);
 	});
 
-	it('refuse un lien local quand on tape la PRODUCTION', () => {
+	it('refuses a local link when hitting PRODUCTION', () => {
 		// Otherwise a compromised server could redirect the user back to their
 		// own machine, and the link would be opened without a second thought.
 		expect(isTrustedViewUrl('http://localhost:4200/view/abc')).toBe(false);
 		expect(isTrustedViewUrl('http://127.0.0.1:8080/view/abc')).toBe(false);
 	});
 
-	it('refuse un hote etranger qui CONTIENT le notre', () => {
+	it('refuses a foreign host that CONTAINS ours', () => {
 		// The trap: the string contains "stenchill.com", the parsed host does not.
 		expect(isTrustedViewUrl('https://evil.com/?x=stenchill.com')).toBe(false);
 		expect(isTrustedViewUrl('https://stenchill.com.evil.com/view/abc')).toBe(false);
 	});
 
-	it('refuse le http en production et ce qui n est pas une URL', () => {
+	it('refuses http in production and what is not a URL', () => {
 		expect(isTrustedViewUrl('http://stenchill.com/view/abc')).toBe(false);
-		expect(isTrustedViewUrl('pas une url')).toBe(false);
+		expect(isTrustedViewUrl('not a url')).toBe(false);
 	});
 });
 
 describe('buildParamsJson', () => {
-	it('porte la version de schema et les parametres', () => {
+	it('carries the schema version and the parameters', () => {
 		const parsed = JSON.parse(buildParamsJson(DEFAULT_PARAMS));
 		expect(parsed.v).toBe(1);
 		expect(parsed.thickness).toBe(0.4);
@@ -51,7 +51,7 @@ describe('buildParamsJson', () => {
 });
 
 describe('injectParams', () => {
-	it('ajoute le fichier de parametres sans perdre les gerbers', async () => {
+	it('adds the parameters file without losing the gerbers', async () => {
 		const out = await injectParams(await makeZip(), DEFAULT_PARAMS);
 		const archive = await JSZip.loadAsync(await out.arrayBuffer());
 		expect(Object.keys(archive.files).sort()).toEqual(['front.gtp', 'stenchill-params.json']);
@@ -60,7 +60,7 @@ describe('injectParams', () => {
 });
 
 describe('shareStencil', () => {
-	it('poste le ZIP et rend l URL de partage', async () => {
+	it('posts the ZIP and returns the share URL', async () => {
 		const doFetch = vi.fn(async () =>
 			new Response('{"url":"https://stenchill.com/view/abc"}', { status: 200 }));
 		const url = await shareStencil({
@@ -77,7 +77,7 @@ describe('shareStencil', () => {
 		expect((init.body as FormData).get('file')).toBeInstanceOf(Blob);
 	});
 
-	it('refuse une URL de confiance douteuse rendue par le serveur', async () => {
+	it('refuses an untrusted URL returned by the server', async () => {
 		const doFetch = vi.fn(async () =>
 			new Response('{"url":"https://evil.com/view/abc"}', { status: 200 }));
 		await expect(shareStencil({
@@ -90,7 +90,7 @@ describe('shareStencil', () => {
 		})).rejects.toThrow(/untrusted/i);
 	});
 
-	it('leve quand la reponse ne porte pas d URL', async () => {
+	it('throws when the response carries no URL', async () => {
 		const doFetch = vi.fn(async () => new Response('{}', { status: 200 }));
 		await expect(shareStencil({
 			zip: await makeZip(),
@@ -109,7 +109,7 @@ describe('shareStencil', () => {
  * closed, without a word: the `.finally()` that re-enables it only runs once
  * the promise settles.
  */
-describe('le plafond de delai du partage', () => {
+describe('the share deadline ceiling', () => {
 	async function options(extra: Partial<ShareOptions> = {}): Promise<ShareOptions> {
 		return {
 			// A REAL archive: `injectParams` reopens it before sending, and any
@@ -125,7 +125,7 @@ describe('le plafond de delai du partage', () => {
 		};
 	}
 
-	it('passe un signal a fetch meme quand l appelant n en fournit aucun', async () => {
+	it('passes a signal to fetch even when the caller supplies none', async () => {
 		let seen: RequestInit | undefined;
 		await shareStencil(await options({
 			fetchImpl: (async (_url: string, init: RequestInit) => {
@@ -138,7 +138,7 @@ describe('le plafond de delai du partage', () => {
 
 	// The caller's signal must stay ARMED: composing it with the deadline must
 	// not replace it, otherwise cancelling a share stops working.
-	it('honore l annulation de l appelant', async () => {
+	it('honours the caller cancellation', async () => {
 		const controller = new AbortController();
 		controller.abort();
 		await expect(shareStencil(await options({
@@ -152,25 +152,25 @@ describe('le plafond de delai du partage', () => {
 	});
 });
 
-describe('isTrustedViewUrl et la base locale', () => {
+describe('isTrustedViewUrl and the local base', () => {
 	/**
-	 * `baseUrl` etait lu en SOUS-CHAINE. Un `baseUrl` valant
-	 * `https://localhost.exemple.com/api` contient « localhost » sans etre
-	 * local, et rouvrait donc la porte au 127.0.0.1 de l'utilisateur. La
-	 * fonction est exportee et documentee comme une garde generique : elle ne
-	 * doit pas dependre du fait que la constante d'aujourd'hui soit sage.
+	 * `baseUrl` was read as a SUBSTRING. A `baseUrl` of
+	 * `https://localhost.exemple.com/api` contains « localhost » without being
+	 * local, and so reopened the door to the user's 127.0.0.1. The function is
+	 * exported and documented as a generic guard: it must not depend on
+	 * today's constant being well behaved.
 	 */
-	it('refuse un lien local quand la base seulement CONTIENT localhost', () => {
+	it('refuses a local link when the base merely CONTAINS localhost', () => {
 		expect(isTrustedViewUrl('http://127.0.0.1:4200/view/x', 'https://localhost.exemple.com/api/v1')).toBe(false);
 		expect(isTrustedViewUrl('http://localhost:4200/view/x', 'https://notlocalhost.com/api/v1')).toBe(false);
 	});
 
-	it('accepte encore un lien local sur une VRAIE base locale', () => {
+	it('still accepts a local link on a REAL local base', () => {
 		expect(isTrustedViewUrl('http://localhost:4200/view/x', 'http://localhost:8080/api/v1')).toBe(true);
 		expect(isTrustedViewUrl('http://127.0.0.1:4200/view/x', 'http://127.0.0.1:8080/api/v1')).toBe(true);
 	});
 
-	it('refuse quand la base est illisible', () => {
-		expect(isTrustedViewUrl('http://localhost:4200/view/x', 'pas une url')).toBe(false);
+	it('refuses when the base is unreadable', () => {
+		expect(isTrustedViewUrl('http://localhost:4200/view/x', 'not a url')).toBe(false);
 	});
 });

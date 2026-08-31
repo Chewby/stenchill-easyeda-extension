@@ -4,26 +4,26 @@ import { stencilFileName } from '../src/filename';
 const at = new Date(2026, 7, 30, 20, 19, 22); // August 30, 2026, 20:19:22 local
 
 describe('stencilFileName', () => {
-	it('joint le nom du projet et l horodatage', () => {
+	it('joins the project name and the timestamp', () => {
 		expect(stencilFileName('torture-test', at)).toBe('torture-test_20260830_201922.zip');
 	});
 
-	it('remplit les champs a deux chiffres', () => {
+	it('pads the fields to two digits', () => {
 		expect(stencilFileName('x', new Date(2026, 0, 5, 4, 3, 2))).toBe('x_20260105_040302.zip');
 	});
 
-	it('remplace ce qu un systeme de fichiers refuse', () => {
+	it('replaces what a filesystem refuses', () => {
 		expect(stencilFileName('mon projet/v2', at)).toBe('mon_projet_v2_20260830_201922.zip');
 	});
 
-	it('retombe sur stencil quand le nom ne laisse rien', () => {
+	it('falls back to stencil when the name leaves nothing', () => {
 		// Without this fallback, we would produce " _20260830_201922.zip".
 		expect(stencilFileName('///', at)).toBe('stencil_20260830_201922.zip');
 		expect(stencilFileName(null, at)).toBe('stencil_20260830_201922.zip');
 		expect(stencilFileName(undefined, at)).toBe('stencil_20260830_201922.zip');
 	});
 
-	it('borne la longueur du nom de projet', () => {
+	it('bounds the length of the project name', () => {
 		const name = stencilFileName('a'.repeat(200), at);
 		expect(name).toBe(`${'a'.repeat(60)}_20260830_201922.zip`);
 	});

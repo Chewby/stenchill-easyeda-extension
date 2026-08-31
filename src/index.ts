@@ -61,8 +61,8 @@ export function about(): void {
 			'',
 			translate(dict, 'Turns the paste layers of your board into a stencil you can print on a normal FDM printer, with no manual Gerber export.'),
 			'',
-			// La page du site dans la langue du client : elle explique tout, et
-			// le greffon est un canal vers le site.
+			// The site's page in the client's language: it explains everything,
+			// and the extension is a channel to the site.
 			`https://www.stenchill.com/${siteLocale(language)}/easyeda-extension`,
 			translate(dict, 'MIT licensed. Source on GitHub.'),
 		].join('\n');

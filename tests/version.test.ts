@@ -2,21 +2,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { fetchLatestVersion, isNewer } from '../src/api-client';
 
 describe('fetchLatestVersion', () => {
-	it('lit la cle latest', async () => {
+	it('reads the latest key', async () => {
 		const doFetch = vi.fn(async () => new Response('{"latest":"1.2.0"}', { status: 200 }));
 		expect(
 			await fetchLatestVersion(doFetch as unknown as typeof fetch, 'https://x.test/api/v1', 'UA', 'k'),
 		).toBe('1.2.0');
 	});
 
-	it('rend null sur un 404, sans lever', async () => {
+	it('returns null on a 404, without throwing', async () => {
 		const doFetch = vi.fn(async () => new Response('', { status: 404 }));
 		expect(
 			await fetchLatestVersion(doFetch as unknown as typeof fetch, 'https://x.test/api/v1', 'UA', 'k'),
 		).toBeNull();
 	});
 
-	it('rend null quand le reseau echoue, sans lever', async () => {
+	it('returns null when the network fails, without throwing', async () => {
 		const doFetch = vi.fn(async () => {
 			throw new Error('offline');
 		});
@@ -27,14 +27,14 @@ describe('fetchLatestVersion', () => {
 });
 
 describe('isNewer', () => {
-	it('compare champ par champ et pas en texte', () => {
+	it('compares field by field and not as text', () => {
 		expect(isNewer('1.10.0', '1.9.0')).toBe(true);
 		expect(isNewer('1.0.0', '1.0.0')).toBe(false);
 		expect(isNewer('0.9.0', '1.0.0')).toBe(false);
 	});
 
-	it('rend false sur une version illisible', () => {
-		expect(isNewer('pas-une-version', '1.0.0')).toBe(false);
+	it('returns false on an unreadable version', () => {
+		expect(isNewer('not-a-version', '1.0.0')).toBe(false);
 	});
 });
 

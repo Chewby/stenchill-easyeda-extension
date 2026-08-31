@@ -13,12 +13,12 @@ import { API_KEY, DEFAULT_BASE_URL } from '../src/api-client';
  * The key is NOT a secret, it is a priority marker shared with the KiCad
  * plugin (see `plugin-kicad/api_client.py`).
  */
-describe('contrat avec le serveur', () => {
-	it('porte la cle de priorite que le serveur accepte', () => {
+describe('contract with the server', () => {
+	it('carries the priority key the server accepts', () => {
 		expect(API_KEY).toBe('stenchill-kicad-2026-xK9mP4wQ7rT2');
 	});
 
-	it('vise la production sur le chemin du plugin', () => {
+	it('targets production on the plugin path', () => {
 		expect(DEFAULT_BASE_URL).toBe('https://www.stenchill.com/api/v1');
 	});
 });

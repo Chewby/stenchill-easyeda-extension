@@ -265,9 +265,9 @@ function setDismiss(label: 'Quit' | 'Cancel'): void {
 el('quit').addEventListener('click', () => {
 	if (inFlight) {
 		inFlight.abort();
-		// `abort()` n'interrompt PAS `exportPasteGerbers`, qui peut durer
-		// plusieurs secondes sur une grande carte : sans ce mot, l'utilisateur
-		// clique et rien ne bouge jusqu'a la fin de l'export.
+		// `abort()` does NOT interrupt `exportPasteGerbers`, which can take
+		// several seconds on a large board: without this word, the user clicks
+		// and nothing moves until the export is done.
 		setStatus(t('Cancelling...'));
 		return;
 	}
@@ -423,37 +423,37 @@ async function checkForUpdate(): Promise<void> {
 	el('update').style.display = 'block';
 }
 
-// Apres la langue, et dans cet ordre : le bandeau ecrit du texte traduit,
-// alors que `localizeDocument` ne traduit que ce qui est deja dans le
+// After the language, and in that order: the band writes translated text,
+// whereas `localizeDocument` only translates what is already in the
 // document.
-// Sonar S7785 voudrait un `await` de premier niveau ici. Il ne compile pas :
-// mesure le 2026-08-31, esbuild rend « Top-level await is currently not
-// supported with the "iife" output format », et l'iframe DOIT etre servie en
-// iife puisqu'elle est chargee par une balise <script> et non comme un module.
-// La fonction anonyme asynchrone est donc la seule forme disponible, et elle a
-// le merite de rendre l'ordre explicite.
-// Le bouton reste inerte tant que les reglages ne sont pas revenus : sinon un
-// stockage qui tarde ecrase une saisie deja commencee, ou pire, on genere avec
-// des parametres que l'utilisateur n'a pas vus.
+// Sonar S7785 would want a top-level `await` here. It does not compile:
+// measured on 2026-08-31, esbuild answers "Top-level await is currently not
+// supported with the "iife" output format", and the iframe MUST be served as
+// iife since it is loaded by a <script> tag and not as a module.
+// The async anonymous function is therefore the only form available, and it
+// has the merit of making the order explicit.
+// The button stays inert until the settings are back: otherwise a slow storage
+// read overwrites an entry already begun, or worse, we generate with
+// parameters the user has not seen.
 input('go').disabled = true;
 
-// UNE seule fonction anonyme asynchrone pour tout le demarrage, et l'ordre est
-// porteur. La langue d'abord, `localizeDocument` ne traduisant que ce qui est
-// deja dans le document. Les reglages ensuite, pour rendre le bouton au plus
-// tot. La verification de version en DERNIER, parce qu'elle passe par le
-// reseau et ne doit retarder ni l'un ni l'autre.
+// ONE single async anonymous function for the whole startup, and the order is
+// load-bearing. The language first, `localizeDocument` only translating what is
+// already in the document. The settings next, to give the button back as early
+// as possible. The version check LAST, because it goes over the network and
+// must delay neither of the other two.
 //
-// Le chargement des reglages etait une chaine `.then()` a part : Sonar S7785 la
-// refuse, et la forme qu'il prefere, un `await` de premier niveau, ne compile
-// pas en iife. La fondre ici supprime la chaine au lieu de la faire tolerer.
+// Loading the settings used to be a separate `.then()` chain: Sonar S7785
+// refuses it, and the form it prefers, a top-level `await`, does not compile in
+// iife. Merging it here removes the chain instead of getting it tolerated.
 void (async () => {
-	// `finally`, et c'est PORTEUR. Sans lui, un rejet d'`applyLanguage` sautait
-	// le reactivation du bouton et la seule action utile de la fenetre restait
-	// morte pour toujours : le panneau rouge s'affiche, et rien d'autre. Le
-	// risque est faible, `hostLanguage` et `resolveDict` avalent tout et il ne
-	// reste que `localizeDocument` qui touche le DOM, mais la consequence est
-	// TOTALE. `loadSettings` s'etait vu accorder son propre `catch` pour ce
-	// motif exact ; la serialisation de ce bloc avait defait cette protection.
+	// `finally`, and it is LOAD-BEARING. Without it, a rejection from
+	// `applyLanguage` skipped re-enabling the button and the window's only
+	// useful action stayed dead for ever: the red panel shows up, and nothing
+	// else. The risk is low, `hostLanguage` and `resolveDict` swallow
+	// everything and only `localizeDocument` touches the DOM, but the
+	// consequence is TOTAL. `loadSettings` had been granted its own `catch` for
+	// that exact reason; serialising this block had undone that protection.
 	try {
 		await applyLanguage();
 		writeForm(await loadSettings());

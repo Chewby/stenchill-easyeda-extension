@@ -8,6 +8,7 @@ import fs from 'fs-extra';
 import { WebSocket, WebSocketServer } from 'ws';
 
 import common from '../config/esbuild.common.ts';
+import { IFRAME_BUILD_OPTIONS } from '../config/iframe-build.ts';
 import rawExtensionConfig from '../extension.json' with { type: 'json' };
 
 import { fixUuid, packageExtension, testUuid } from './utils.ts';
@@ -24,7 +25,7 @@ const WEBSOCKET_PORT = 59394;
 const DIST_DIR = path.join(__dirname, 'dist');
 const ROOT_DIR = path.join(__dirname, '../');
 
-// 处理 extension.json，确保 UUID 合法（只在启动时修复一次）
+// Process extension.json, making sure the UUID is valid (fixed only once, at startup)
 function resolveExtensionConfig() {
 	const extensionConfig = { ...rawExtensionConfig } as Record<string, unknown>;
 	if (!testUuid(extensionConfig.uuid as string | undefined)) {
@@ -41,7 +42,7 @@ const EEXT_FILENAME = `${extensionConfig.name}_v${extensionConfig.version}.eext`
 const EEXT_PATH = path.join(DIST_DIR, EEXT_FILENAME);
 
 /**
- * 读取 eext 文件并转为 base64
+ * Read the eext file and convert it to base64
  */
 async function getEextBase64(): Promise<string> {
 	const buffer = await fs.readFile(EEXT_PATH);
@@ -49,7 +50,7 @@ async function getEextBase64(): Promise<string> {
 }
 
 /**
- * 向所有已连接的 WebSocket 客户端推送 eext 文件
+ * Push the eext file to every connected WebSocket client
  */
 async function broadcastEext(wss: WebSocketServer): Promise<void> {
 	let base64Content: string;
@@ -80,20 +81,20 @@ async function broadcastEext(wss: WebSocketServer): Promise<void> {
 }
 
 /**
- * 主逻辑
+ * Main logic
  */
 async function main() {
-	// 确保 dist 目录存在
+	// Make sure the dist directory exists
 	fs.ensureDirSync(DIST_DIR);
 
-	// 启动 WebSocket 服务器
+	// Start the WebSocket server
 	const wss = new WebSocketServer({ port: WEBSOCKET_PORT });
 	console.log(`[Dev Mode] WebSocket server started: ws://localhost:${WEBSOCKET_PORT}`);
 
 	wss.on('connection', async (ws) => {
 		console.log('[Dev Mode] New client connected');
 
-		// 客户端首次连接时，发送当前最新的 eext 文件
+		// On a client's first connection, send the current latest eext file
 		try {
 			const base64Content = await getEextBase64();
 			const message = JSON.stringify({
@@ -115,14 +116,14 @@ async function main() {
 		});
 	});
 
-	// 监听构建完成事件，增量构建后自动打包并推送
+	// Listen for the build-finished event: after an incremental build, package and push automatically
 	let buildTimeout: NodeJS.Timeout | null = null;
 	const rebuildPlugin = {
 		name: 'rebuild-notify',
 		setup(build: esbuild.PluginBuild) {
 			build.onEnd((result) => {
 				if (result.errors.length === 0) {
-					// 防抖处理，避免短时间内多次触发
+					// Debounce, to avoid firing several times in quick succession
 					if (buildTimeout) {
 						clearTimeout(buildTimeout);
 					}
@@ -142,7 +143,7 @@ async function main() {
 		},
 	};
 
-	// 创建带插件的 context
+	// Create the context with the plugin
 	const ctx = await esbuild.context({
 		...common,
 		plugins: [rebuildPlugin],
@@ -159,29 +160,23 @@ async function main() {
 	// while changing nothing on screen. A success message that lies is worse
 	// than no message.
 	//
-	// Same options as `config/esbuild.iframe.ts`, which produces this file for
-	// `npm run build`; the two must not drift.
+	// Same options as `npm run build`, shared through `IFRAME_BUILD_OPTIONS`
+	// so the two cannot drift. Only the watch plugin is added here.
 	const iframeCtx = await esbuild.context({
-		entryPoints: { app: './src/iframe-app' },
-		bundle: true,
-		minify: false,
-		outdir: './iframe/',
-		platform: 'browser',
-		format: 'iife',
-		treeShaking: true,
+		...IFRAME_BUILD_OPTIONS,
 		plugins: [rebuildPlugin],
 	});
 
-	// 初始构建
+	// Initial build
 	console.log('[Dev Mode] Starting initial build...');
 	await ctx.rebuild();
 	await iframeCtx.rebuild();
 	console.log('[Dev Mode] Initial build complete');
 
-	// 初始打包
+	// Initial packaging
 	console.log('[Dev Mode] Starting to package extension...');
 	await packageExtension(ROOT_DIR, EEXT_PATH);
-	// 启动文件监听
+	// Start watching files
 	await ctx.watch();
 	// The plugin's 300 ms debounce absorbs both notifications when one file
 	// belongs to the two graphs, which is the case for everything `src/` shares

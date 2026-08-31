@@ -11,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * 主逻辑方法
+ * Main logic.
  */
 function main() {
 	if (!testUuid(extensionConfig.uuid)) {

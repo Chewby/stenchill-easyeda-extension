@@ -9,16 +9,9 @@
  */
 import process from 'node:process';
 import esbuild from 'esbuild';
+import { IFRAME_BUILD_OPTIONS } from './iframe-build.ts';
 
 (async () => {
-	await esbuild.build({
-		entryPoints: { app: './src/iframe-app' },
-		bundle: true,
-		minify: false,
-		outdir: './iframe/',
-		platform: 'browser',
-		format: 'iife',
-		treeShaking: true,
-	});
+	await esbuild.build(IFRAME_BUILD_OPTIONS);
 	process.exit();
 })();

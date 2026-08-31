@@ -20,7 +20,7 @@ const HTML = readFileSync(new URL('../iframe/index.html', import.meta.url), 'utf
 
 function attributesOf(id: string): Record<string, string> {
 	const tag = new RegExp(`<input[^>]*id="${id}"[^>]*>`).exec(HTML);
-	expect(tag, `champ ${id} absent du formulaire`).not.toBeNull();
+	expect(tag, `field ${id} missing from the form`).not.toBeNull();
 	const attributes: Record<string, string> = {};
 	for (const [, name, value] of tag![0].matchAll(/([a-z]+)="([^"]*)"/g)) {
 		attributes[name] = value;
@@ -28,20 +28,20 @@ function attributesOf(id: string): Record<string, string> {
 	return attributes;
 }
 
-describe('le formulaire et params.ts', () => {
-	it.each(Object.keys(BOUNDS))('%s porte les memes bornes des deux cotes', (id) => {
+describe('the form and params.ts', () => {
+	it.each(Object.keys(BOUNDS))('%s carries the same bounds on both sides', (id) => {
 		const attributes = attributesOf(id);
 		const [min, max] = BOUNDS[id];
-		expect(Number(attributes.min), `min de ${id}`).toBe(min);
-		expect(Number(attributes.max), `max de ${id}`).toBe(max);
+		expect(Number(attributes.min), `min of ${id}`).toBe(min);
+		expect(Number(attributes.max), `max of ${id}`).toBe(max);
 	});
 
-	it.each(Object.keys(BOUNDS))('%s affiche la valeur par defaut du code', (id) => {
+	it.each(Object.keys(BOUNDS))('%s displays the default value from the code', (id) => {
 		const shown = Number(attributesOf(id).value);
 		expect(shown).toBe(DEFAULT_PARAMS[id as keyof typeof DEFAULT_PARAMS]);
 	});
 
-	it('coche les trois cases dont le defaut est vrai', () => {
+	it('checks the three boxes whose default is true', () => {
 		for (const id of ['enableShoulders', 'enableSlotify', 'dropUnprintableGrids']) {
 			// `checked` is a BARE attribute in the HTML: extraction by
 			// key="value" pairs cannot see it, it has to be looked up on the

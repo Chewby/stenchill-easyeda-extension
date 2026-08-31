@@ -59,12 +59,12 @@ export function stencilFileName(projectName: string | null | undefined, date: Da
 		// The dash belongs in both classes: it was missing from the leading one,
 		// and 'ПЛАТА-2' produced a file named '-2_...zip', which a shell reads
 		// as an option rather than a path.
-		// Sonar leve un point chaud de deni de service sur la seconde de ces deux
-		// expressions. Revu comme SANS DANGER, pour deux raisons independantes :
-		// une classe de caracteres unique suivie de `+` n'a aucune ambiguite a
-		// resoudre, donc rien a rebrousser, et l'entree est de toute facon bornee
-		// a 120 caracteres par le `slice` en tete de fonction. Le `$` ancre la
-		// seule qui pourrait inquieter.
+		// Sonar raises a denial-of-service hotspot on the second of these two
+		// expressions. Reviewed as SAFE, for two independent reasons: a single
+		// character class followed by `+` has no ambiguity to resolve, hence
+		// nothing to backtrack over, and the input is bounded to 120 characters
+		// anyway by the `slice` at the top of the function. The `$` anchors the
+		// only one that could be a worry.
 		.replaceAll(/^[_.-]+/g, '')
 		.replaceAll(/[_.-]+$/g, '')
 		.slice(0, 60);

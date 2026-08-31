@@ -17,12 +17,12 @@ function read(name: string): { version: string; license: string } {
 	return JSON.parse(readFileSync(new URL(`../${name}`, import.meta.url), 'utf8'));
 }
 
-describe('la version, aux QUATRE endroits ou elle vit', () => {
-	it('est la meme dans le code et dans le manifeste', () => {
+describe('the version, in the FOUR places where it lives', () => {
+	it('is the same in the code and in the manifest', () => {
 		expect(VERSION).toBe(read('extension.json').version);
 	});
 
-	it('est la meme dans package.json', () => {
+	it('is the same in package.json', () => {
 		// Forgotten by the first version of this test: it had stayed at
 		// 1.6.19, the SDK template's version, while the other two said
 		// 26.8.1. A contract that covers only two of the three places leaves
@@ -36,18 +36,18 @@ describe('la version, aux QUATRE endroits ou elle vit', () => {
 	 * fourth place is not in a JSON, so it is read line by line: exactly the
 	 * kind of place one forgets to bump.
 	 */
-	it('est la meme dans sonar-project.properties', () => {
-		// Ce fichier n'existe QUE dans le monorepo : il porte l'URL d'un serveur
-		// interne, donc il est exclu du depot public d'ou partent les releases.
-		// Son absence n'est pas un oubli, c'est le perimetre du fichier, et ce
-		// cas ne s'applique donc pas la-bas.
+	it('is the same in sonar-project.properties', () => {
+		// This file exists ONLY in the monorepo: it carries the URL of an
+		// internal server, so it is excluded from the public repository the
+		// releases ship from. Its absence is not an oversight, it is the file's
+		// scope, and this case therefore does not apply over there.
 		//
-		// C'est un saut conditionnel, ce que ce projet refuse d'habitude : le
-		// meme reflexe applique a `iframe/app.js` aurait laisse passer un paquet
-		// livre sans son interface. La difference tient a la CAUSE de l'absence.
-		// `iframe/app.js` manque transitoirement, avant une compilation, et on
-		// sait la declencher ; celui-ci manque par construction, definitivement,
-		// dans un depot ou Sonar ne tourne pas.
+		// This is a conditional skip, which this project normally refuses: the
+		// same reflex applied to `iframe/app.js` would have let through a
+		// package shipped without its interface. The difference lies in the
+		// CAUSE of the absence. `iframe/app.js` is missing transiently, before
+		// a build, and we know how to trigger it; this one is missing by
+		// construction, permanently, in a repository where Sonar does not run.
 		const url = new URL('../sonar-project.properties', import.meta.url);
 		if (!existsSync(url))
 			return;
@@ -57,7 +57,7 @@ describe('la version, aux QUATRE endroits ou elle vit', () => {
 		expect(line![1].trim()).toBe(VERSION);
 	});
 
-	it('porte la meme licence partout', () => {
+	it('carries the same licence everywhere', () => {
 		// The project once announced three at once: MIT in package.json,
 		// Apache-2.0 in extension.json, and an Apache-2.0 LICENSE file.
 		expect(read('package.json').license).toBe('MIT');

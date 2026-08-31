@@ -61,12 +61,12 @@ function codeStrings(): string[] {
 describe('the dictionaries cover the interface', () => {
 	it('has an English entry for every string in the markup', () => {
 		const missing = markupStrings().filter(s => !(s in en));
-		expect(missing, 'absentes de locales/en.json').toEqual([]);
+		expect(missing, 'missing from locales/en.json').toEqual([]);
 	});
 
 	it('has an English entry for every string the code translates', () => {
 		const missing = codeStrings().filter(s => !(s in en));
-		expect(missing, 'absentes de locales/en.json').toEqual([]);
+		expect(missing, 'missing from locales/en.json').toEqual([]);
 	});
 
 	// The converse matters as much: an entry nothing displays any more still
@@ -75,7 +75,7 @@ describe('the dictionaries cover the interface', () => {
 	it('has no entry that nothing displays any more', () => {
 		const shown = new Set([...markupStrings(), ...codeStrings()]);
 		const orphans = Object.keys(en).filter(k => !shown.has(k));
-		expect(orphans, 'entrees mortes de locales/en.json').toEqual([]);
+		expect(orphans, 'dead entries in locales/en.json').toEqual([]);
 	});
 
 	it('translates every English entry into Chinese, and nothing else', () => {

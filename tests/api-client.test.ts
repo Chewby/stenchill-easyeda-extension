@@ -31,7 +31,7 @@ const base = {
 };
 
 describe('generateStencil', () => {
-	it('envoie le ZIP sous le champ file et les dix parametres', async () => {
+	it('sends the ZIP under the file field and the ten parameters', async () => {
 		const doFetch = fakeFetch('event: complete\ndata: {"stlPath":"abc.zip"}\n\n');
 		await generateStencil({ ...base, fetchImpl: doFetch });
 		const [url, init] = (doFetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
@@ -44,7 +44,7 @@ describe('generateStencil', () => {
 		expect(init.headers['User-Agent']).toBe('UA');
 	});
 
-	it('remonte la progression et la file d attente', async () => {
+	it('reports progress and the queue', async () => {
 		const onProgress = vi.fn();
 		const onQueued = vi.fn();
 		await generateStencil({
@@ -61,7 +61,7 @@ describe('generateStencil', () => {
 		expect(onProgress).toHaveBeenCalledWith({ step: 2, total: 5, labelText: 'Compensation' });
 	});
 
-	it('rend le contenu telecharge du STL', async () => {
+	it('returns the downloaded STL content', async () => {
 		const result = await generateStencil({
 			...base,
 			fetchImpl: fakeFetch('event: complete\ndata: {"stlPath":"abc.zip"}\n\n'),
@@ -70,21 +70,21 @@ describe('generateStencil', () => {
 		expect(new Uint8Array(result.bytes)).toEqual(new Uint8Array([1, 2, 3]));
 	});
 
-	it('leve ApiError sur un evenement error', async () => {
+	it('throws ApiError on an error event', async () => {
 		await expect(generateStencil({
 			...base,
 			fetchImpl: fakeFetch('event: error\ndata: {"error":"NO_PASTE_LAYER"}\n\n'),
 		})).rejects.toThrow(ApiError);
 	});
 
-	it('leve ApiError quand le flux se termine sans complete', async () => {
+	it('throws ApiError when the stream ends without complete', async () => {
 		await expect(generateStencil({
 			...base,
 			fetchImpl: fakeFetch('event: progress\ndata: {"step":1}\n\n'),
 		})).rejects.toThrow(ApiError);
 	});
 
-	it('transmet un signal ANNULABLE aux deux appels reseau', () => {
+	it('passes a CANCELLABLE signal to both network calls', () => {
 		// We no longer check the signal's identity: it is COMPOSED with the
 		// timeout ceiling, so it is no longer the caller's own. What matters is
 		// that it still aborts when the user cancels.
@@ -103,7 +103,7 @@ describe('generateStencil', () => {
 		})();
 	});
 
-	it('passe un signal meme quand l appelant n en donne aucun', () => {
+	it('passes a signal even when the caller gives none', () => {
 		// The timeout ceiling must also apply without any manual cancellation:
 		// that is its whole point, getting out of a stream swallowed by some
 		// intermediary.
@@ -115,21 +115,21 @@ describe('generateStencil', () => {
 		})();
 	});
 
-	it('laisse remonter l abandon quand fetch est interrompu', async () => {
+	it('lets the abort surface when fetch is interrupted', async () => {
 		const doFetch = vi.fn(async () => {
 			throw new DOMException('aborted', 'AbortError');
 		}) as unknown as typeof fetch;
 		await expect(generateStencil({ ...base, fetchImpl: doFetch })).rejects.toThrow(/abort/i);
 	});
 
-	it('leve quand le serveur refuse la requete de generation', async () => {
+	it('throws when the server refuses the generation request', async () => {
 		const doFetch = vi.fn(async () => new Response('', { status: 503 })) as unknown as typeof fetch;
 		await expect(generateStencil({ ...base, fetchImpl: doFetch }))
 			.rejects
 			.toThrow(/HTTP 503/);
 	});
 
-	it('leve quand le telechargement du resultat echoue', async () => {
+	it('throws when the result download fails', async () => {
 		// The stream succeeded, the user has paid for their generation, and it
 		// is the SECOND request that fails: the message must say download.
 		const doFetch = vi.fn(async (url: string) => {
@@ -143,7 +143,7 @@ describe('generateStencil', () => {
 			.toThrow(/Download failed: HTTP 404/);
 	});
 
-	it('reste utilisable si AbortSignal.any manque', async () => {
+	it('stays usable when AbortSignal.any is missing', async () => {
 		// Composition requires Chromium >= 116 and we do not know the EasyEDA
 		// client's floor version. Without a fallback, an older client would
 		// throw on the very first line and generation would NOT START AT ALL:
@@ -160,17 +160,17 @@ describe('generateStencil', () => {
 				signal: controller.signal,
 			});
 			expect(result.stlPath).toBe('abc.zip');
-			// Le repli garde les DEUX proprietes. La premiere redaction de ce
-			// test enterinait le defaut : elle assertait que le signal passe a
-			// fetch EST celui de l'appelant, ce qui revient a dire que le
-			// plafond de delai a disparu. Or c'est precisement le cas qu'il
-			// existe pour couvrir, un intermediaire qui avale la connexion sur
-			// un client ancien.
+			// The fallback keeps BOTH properties. The first writing of this
+			// test rubber-stamped the defect: it asserted that the signal
+			// passed to fetch IS the caller's own, which amounts to saying the
+			// timeout ceiling is gone. Yet that is precisely the case it exists
+			// to cover, an intermediary swallowing the connection on an older
+			// client.
 			const calls = (doFetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
 			const passe = calls[0][1].signal as AbortSignal;
 			expect(passe).not.toBe(controller.signal);
 			expect(passe.aborted).toBe(false);
-			// et l'annulation de l'appelant traverse toujours le relais.
+			// and the caller's cancellation still travels through the relay.
 			controller.abort(new Error('stop'));
 			expect(passe.aborted).toBe(true);
 		}
@@ -179,7 +179,7 @@ describe('generateStencil', () => {
 		}
 	});
 
-	it('refuse un chemin de telechargement suspect', async () => {
+	it('refuses a suspicious download path', async () => {
 		// The server only accepts a SEGMENT (^[a-zA-Z0-9._-]+\.zip$). A path
 		// would be encoded as %2F and would fail with a 404 AFTER a successful
 		// generation, at the most expensive moment. We reject early, and say why.
@@ -189,13 +189,13 @@ describe('generateStencil', () => {
 			.toThrow(/suspicious download path/i);
 	});
 
-	it('accepte le nom de fichier que le serveur produit', async () => {
+	it('accepts the filename the server produces', async () => {
 		const doFetch = fakeFetch('event: complete\ndata: {"stlPath":"a_b-1.2.zip"}\n\n');
 		const result = await generateStencil({ ...base, fetchImpl: doFetch });
 		expect(result.stlPath).toBe('a_b-1.2.zip');
 	});
 
-	it('ne casse pas sur une charge JSON malformee', async () => {
+	it('does not break on a malformed JSON payload', async () => {
 		const result = await generateStencil({
 			...base,
 			fetchImpl: fakeFetch('event: progress\ndata: pas du json\n\nevent: complete\ndata: {"stlPath":"abc.zip"}\n\n'),
@@ -205,19 +205,18 @@ describe('generateStencil', () => {
 });
 
 /**
- * `withDeadline` est desormais la primitive PARTAGEE par les deux appels
- * reseau du greffon. Sa branche interessante est celle qu'un runtime moderne
- * n'emprunte jamais, donc elle pourrirait sans bruit : il faut retirer
- * `AbortSignal.any` pour l'atteindre.
+ * `withDeadline` is now the primitive SHARED by both of the plugin's network
+ * calls. Its interesting branch is the one a modern runtime never takes, so it
+ * would rot silently: `AbortSignal.any` has to be removed to reach it.
  */
 describe('withDeadline', () => {
-	it('rend le seul plafond quand l appelant ne fournit pas de signal', () => {
+	it('returns the ceiling alone when the caller supplies no signal', () => {
 		const s = withDeadline(undefined, 50);
 		expect(s).toBeInstanceOf(AbortSignal);
 		expect(s.aborted).toBe(false);
 	});
 
-	it('compose les deux quand AbortSignal.any existe', () => {
+	it('composes both when AbortSignal.any exists', () => {
 		const ctl = new AbortController();
 		const s = withDeadline(ctl.signal, 50_000);
 		expect(s).not.toBe(ctl.signal);
@@ -225,11 +224,11 @@ describe('withDeadline', () => {
 		expect(s.aborted).toBe(true);
 	});
 
-	// SANS `AbortSignal.any`, les DEUX sources doivent encore declencher. La
-	// premiere redaction du repli rendait `signal ?? deadline`, donc elle
-	// JETAIT le plafond des qu'un signal etait fourni : le cas precis que le
-	// plafond existe pour couvrir redevenait une attente infinie.
-	it('sans AbortSignal.any, l annulation de l appelant traverse le relais', () => {
+	// WITHOUT `AbortSignal.any`, BOTH sources must still fire. The first
+	// writing of the fallback returned `signal ?? deadline`, so it THREW AWAY
+	// the ceiling as soon as a signal was supplied: the very case the ceiling
+	// exists to cover became an infinite wait again.
+	it('without AbortSignal.any, the caller cancellation travels through the relay', () => {
 		const vrai = AbortSignal.any;
 		(AbortSignal as unknown as { any?: unknown }).any = undefined;
 		try {
@@ -244,7 +243,7 @@ describe('withDeadline', () => {
 		}
 	});
 
-	it('sans AbortSignal.any, le PLAFOND declenche aussi', async () => {
+	it('without AbortSignal.any, the CEILING fires too', async () => {
 		const vrai = AbortSignal.any;
 		(AbortSignal as unknown as { any?: unknown }).any = undefined;
 		try {
