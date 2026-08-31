@@ -44,26 +44,51 @@ import { USER_AGENT, VERSION } from './version';
  */
 export function openDialog(): void {
 	void (async () => {
-		const answer: UpdateAnswer = { checked: false, latest: null };
+		let answer: UpdateAnswer = { checked: false, latest: null };
 		try {
 			const latest = await fetchLatestVersion(
 				fetch, DEFAULT_BASE_URL, USER_AGENT, API_KEY, PREOPEN_VERSION_TIMEOUT_MS,
 			);
-			// `null` se lit ici « pas de reponse » et non « rien de neuf » : la
-			// fonction rend null aussi bien sur un 404 que sur un reseau muet,
-			// et confondre les deux ferait taire le repli de la page.
-			answer.checked = latest !== null;
-			answer.latest = latest !== null && isNewer(latest, VERSION) ? latest : null;
+			// `null` reads as "no answer" here, not as "nothing newer": the
+			// function returns null on a 404 as much as on a silent network, and
+			// conflating the two would mute the page's fallback.
+			answer = {
+				checked: latest !== null,
+				latest: latest !== null && isNewer(latest, VERSION) ? latest : null,
+			};
 		}
 		catch {
 			// A version check must never cost the user their dialog.
 		}
-		try {
-			await eda.sys_Storage.setExtensionUserConfig(UPDATE_LATEST_KEY, answer);
+
+		if (answer.checked) {
+			try {
+				await eda.sys_Storage.setExtensionUserConfig(UPDATE_LATEST_KEY, answer);
+			}
+			catch {
+				// The page will ask for itself.
+			}
 		}
-		catch {
-			// Sans reponse ecrite, la page redemandera d'elle-meme.
+		else {
+			// We could not ask, so we DO NOT overwrite: the answer already there
+			// is the page's, from an earlier open, and it is the only thing that
+			// can size this window correctly.
+			//
+			// The first version wrote unconditionally. If this context has no
+			// network at all, it erased the page's answer on every open, the page
+			// asked again every time, and the window never grew: a scrollbar on
+			// every single open, for ever. Measured against the running client on
+			// 2026-08-31, that is exactly what happened.
+			try {
+				const saved = await eda.sys_Storage.getExtensionUserConfig(UPDATE_LATEST_KEY) as UpdateAnswer | undefined;
+				if (saved?.checked)
+					answer = saved;
+			}
+			catch {
+				// Nothing known, so the plain height.
+			}
 		}
+
 		const height = DIALOG_HEIGHT + (answer.latest ? UPDATE_BAND_HEIGHT : 0);
 		eda.sys_IFrame.openIFrame('/iframe/index.html', DIALOG_WIDTH, height, IFRAME_ID);
 	})();

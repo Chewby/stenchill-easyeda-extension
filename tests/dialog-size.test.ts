@@ -64,6 +64,22 @@ describe('the dialog size contract', () => {
 		expect(read).toBeLessThan(ask);
 	});
 
+	/**
+	 * The entry point must not overwrite a stored answer with its own failure.
+	 *
+	 * The first version wrote unconditionally. If that execution context has no
+	 * network at all, it erased the page's answer on every open, the page asked
+	 * again every time, and the window never grew: a scrollbar on every single
+	 * open, for ever. Observed against the running client on 2026-08-31.
+	 */
+	it('only stores an answer it actually got, and reuses the page one otherwise', () => {
+		// L'ecriture doit etre SOUS condition de `checked`, et la lecture de
+		// repli doit exister. On asserte sur la structure et non sur les mots :
+		// les deux noms figurent aussi dans les commentaires.
+		expect(ENTRY).toMatch(/if \(answer\.checked\)[\s\S]*?setExtensionUserConfig\(UPDATE_LATEST_KEY/);
+		expect(ENTRY).toMatch(/else \{[\s\S]*?getExtensionUserConfig\(UPDATE_LATEST_KEY\)/);
+	});
+
 	it('keeps the band height positive and the window plausible', () => {
 		expect(UPDATE_BAND_HEIGHT).toBeGreaterThan(0);
 		expect(DIALOG_WIDTH).toBeGreaterThan(300);
