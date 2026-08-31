@@ -6,12 +6,11 @@
  * being available there in full (measured on 2026-08-30). See
  * `src/iframe-app.ts`.
  */
-import { API_KEY, DEFAULT_BASE_URL, fetchLatestVersion, isNewer, PREOPEN_VERSION_TIMEOUT_MS } from './api-client';
 import { DIALOG_HEIGHT, DIALOG_WIDTH, UPDATE_BAND_HEIGHT, UPDATE_LATEST_KEY, type UpdateAnswer } from './dialog-size';
 import { DICTS } from './dicts';
 import { resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
-import { USER_AGENT, VERSION } from './version';
+import { VERSION } from './version';
 
 /*
  * There is no `activate` here any more, and no `activationEvents` in
@@ -42,54 +41,38 @@ import { USER_AGENT, VERSION } from './version';
  * gives up after `PREOPEN_VERSION_TIMEOUT_MS`, which is short precisely
  * because the user is waiting on a window that has not appeared yet.
  */
+/**
+ * Opens the dialog, sized from what the page found last time.
+ *
+ * This function does NOT check for a new version, and that is a measurement,
+ * not a preference. The check was tried here first, because `openIFrame` takes
+ * the height as an argument and nothing can change it afterwards, so this is
+ * the only moment the window can be made taller for the update band. It never
+ * returned anything: this execution context has no network access, while the
+ * iframe's does. Confirmed against the running client on 2026-08-31, by the
+ * only signal available from outside it: the first open after a new version
+ * appears scrolls, and the second does not, which can only happen if the page
+ * is the one doing the asking.
+ *
+ * Keeping the attempt would have cost every menu click a wait of up to
+ * `PREOPEN_VERSION_TIMEOUT_MS` for an answer that never comes.
+ *
+ * The consequence is therefore unavoidable and worth stating plainly: the
+ * FIRST open after a new version appears is the short one and scrolls once.
+ * Every open after that is the right height, and the window shrinks back on
+ * its own once the update is installed.
+ */
 export function openDialog(): void {
 	void (async () => {
-		let answer: UpdateAnswer = { checked: false, latest: null };
+		let latest: string | null = null;
 		try {
-			const latest = await fetchLatestVersion(
-				fetch, DEFAULT_BASE_URL, USER_AGENT, API_KEY, PREOPEN_VERSION_TIMEOUT_MS,
-			);
-			// `null` reads as "no answer" here, not as "nothing newer": the
-			// function returns null on a 404 as much as on a silent network, and
-			// conflating the two would mute the page's fallback.
-			answer = {
-				checked: latest !== null,
-				latest: latest !== null && isNewer(latest, VERSION) ? latest : null,
-			};
+			const saved = await eda.sys_Storage.getExtensionUserConfig(UPDATE_LATEST_KEY) as UpdateAnswer | undefined;
+			latest = saved?.checked && typeof saved.latest === 'string' ? saved.latest : null;
 		}
 		catch {
-			// A version check must never cost the user their dialog.
+			// An unreadable answer costs a scrollbar, never the dialog.
 		}
-
-		if (answer.checked) {
-			try {
-				await eda.sys_Storage.setExtensionUserConfig(UPDATE_LATEST_KEY, answer);
-			}
-			catch {
-				// The page will ask for itself.
-			}
-		}
-		else {
-			// We could not ask, so we DO NOT overwrite: the answer already there
-			// is the page's, from an earlier open, and it is the only thing that
-			// can size this window correctly.
-			//
-			// The first version wrote unconditionally. If this context has no
-			// network at all, it erased the page's answer on every open, the page
-			// asked again every time, and the window never grew: a scrollbar on
-			// every single open, for ever. Measured against the running client on
-			// 2026-08-31, that is exactly what happened.
-			try {
-				const saved = await eda.sys_Storage.getExtensionUserConfig(UPDATE_LATEST_KEY) as UpdateAnswer | undefined;
-				if (saved?.checked)
-					answer = saved;
-			}
-			catch {
-				// Nothing known, so the plain height.
-			}
-		}
-
-		const height = DIALOG_HEIGHT + (answer.latest ? UPDATE_BAND_HEIGHT : 0);
+		const height = DIALOG_HEIGHT + (latest ? UPDATE_BAND_HEIGHT : 0);
 		eda.sys_IFrame.openIFrame('/iframe/index.html', DIALOG_WIDTH, height, IFRAME_ID);
 	})();
 }

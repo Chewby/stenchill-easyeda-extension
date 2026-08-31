@@ -31,15 +31,6 @@ export const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
  */
 export const VERSION_CHECK_TIMEOUT_MS = 15 * 1000;
 
-/**
- * Deadline when the check runs BEFORE the dialog opens.
- *
- * Far shorter, and for a different reason: here the user is waiting on a
- * window that has not appeared yet. A menu item that does nothing for fifteen
- * seconds reads as broken. Past this delay the dialog opens without the band,
- * which costs nothing but a notice deferred to the next open.
- */
-export const PREOPEN_VERSION_TIMEOUT_MS = 2500;
 
 export class ApiError extends Error {}
 

@@ -32,29 +32,31 @@ describe('the dialog size contract', () => {
 	});
 
 	/**
-	 * The check must run in the ENTRY POINT, and that is not a preference:
-	 * `openIFrame` takes the height as an argument and nothing can change it
-	 * afterwards, so a check made inside the page always arrives after the
-	 * height is settled. An earlier version did exactly that, and the first
-	 * open after a new version appeared still scrolled.
+	 * The entry point must NOT check for a new version, and that is a
+	 * measurement rather than a preference.
+	 *
+	 * The check was tried there first, because `openIFrame` takes the height as
+	 * an argument and nothing can change it afterwards, so that is the only
+	 * moment the window can be made taller for the band. It never returned
+	 * anything: that execution context has no network access, while the
+	 * iframe's does. Confirmed against the running client on 2026-08-31, by the
+	 * only signal available from outside it, the first open scrolling and the
+	 * second not.
+	 *
+	 * Putting the call back would cost every menu click a wait for an answer
+	 * that never comes, and would not make the first open any taller.
 	 */
-	it('asks before opening, on a deadline short enough for a menu click', () => {
-		// On asserte sur l'APPEL et sur son argument, pas sur les mots : les deux
-		// noms figurent aussi dans le commentaire au-dessus, et une assertion sur
-		// le mot nu restait verte alors que l'appel employait le plafond long.
-		// Vu ne PAS rougir a la mutation, ce qui est la seule facon de s'en
-		// apercevoir.
-		expect(ENTRY).toMatch(/fetchLatestVersion\([\s\S]*?PREOPEN_VERSION_TIMEOUT_MS[\s\S]*?\)/);
+	it('does not ask for a version before opening, only reads what the page found', () => {
+		expect(ENTRY).not.toMatch(/\bfetchLatestVersion\(/);
+		expect(ENTRY).toMatch(/getExtensionUserConfig\(UPDATE_LATEST_KEY\)/);
 	});
 
 	/**
-	 * The page READS first and only asks when the entry point could not.
+	 * The page READS the stored answer before it ever asks for itself.
 	 *
-	 * The fallback exists because the two files run in different execution
-	 * contexts, and the extension one has never been shown to reach the
-	 * network while the iframe's has. But it must stay a fallback: if the page
-	 * asked first, the answer could differ from the one that sized the window,
-	 * and the band would no longer match the space reserved for it.
+	 * Not an optimisation: the stored answer is what sized the window, and an
+	 * answer fetched first could differ from it, leaving a band that no longer
+	 * matches the space reserved for it.
 	 */
 	it('reads the stored answer before it ever asks for itself', () => {
 		const read = IFRAME.indexOf('getExtensionUserConfig(UPDATE_LATEST_KEY)');
@@ -64,20 +66,11 @@ describe('the dialog size contract', () => {
 		expect(read).toBeLessThan(ask);
 	});
 
-	/**
-	 * The entry point must not overwrite a stored answer with its own failure.
-	 *
-	 * The first version wrote unconditionally. If that execution context has no
-	 * network at all, it erased the page's answer on every open, the page asked
-	 * again every time, and the window never grew: a scrollbar on every single
-	 * open, for ever. Observed against the running client on 2026-08-31.
-	 */
-	it('only stores an answer it actually got, and reuses the page one otherwise', () => {
-		// L'ecriture doit etre SOUS condition de `checked`, et la lecture de
-		// repli doit exister. On asserte sur la structure et non sur les mots :
-		// les deux noms figurent aussi dans les commentaires.
-		expect(ENTRY).toMatch(/if \(answer\.checked\)[\s\S]*?setExtensionUserConfig\(UPDATE_LATEST_KEY/);
-		expect(ENTRY).toMatch(/else \{[\s\S]*?getExtensionUserConfig\(UPDATE_LATEST_KEY\)/);
+	// La page doit ECRIRE ce qu'elle trouve : c'est la seule source qui puisse
+	// dimensionner l'ouverture suivante, le point d'entree ne pouvant pas
+	// demander.
+	it('has the page store what it found, for the next open', () => {
+		expect(IFRAME).toMatch(/setExtensionUserConfig\(UPDATE_LATEST_KEY/);
 	});
 
 	it('keeps the band height positive and the window plausible', () => {

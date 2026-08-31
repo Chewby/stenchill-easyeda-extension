@@ -42,7 +42,8 @@ you click Generate. Nothing else on your PCB travels.
 
 **It also asks stenchill.com whether a newer version exists**, each time you
 open the dialog and never otherwise. That call carries the extension's version
-and nothing else, gives up after 15 seconds, and fails silently.
+and nothing else, gives up after 15 seconds, and fails silently. When a new
+version is found the dialog says so, from the following open onwards.
 
 ## Links
 
