@@ -133,15 +133,7 @@ function asInt(value: unknown, fallback: number): number {
 export async function generateStencil(options: GenerateOptions): Promise<GenerateResult> {
 	const { zip, params, fetchImpl, baseUrl, apiKey, userAgent, onProgress, onQueued, signal } = options;
 
-	// The delay ceiling is COMPOSED with manual cancellation, it does not
-	// replace it: `AbortSignal.any` returns a signal that fires as soon as
-	// either of the two trips. Without this composition, the constant would
-	// exist with no caller -- that's the failure this file already documents
-	// for another symbol, and it happened again here three hours later.
-	// `AbortSignal.any` requires Chromium >= 116. We don't know the version
-	// floor of the EasyEDA client, and without this fallback an older client
-	// would throw right here: the generation would no longer start at all,
-	// so the timeout would be worse than the flaw it fixes.
+	// Annulation de l'appelant ET plafond de delai, voir `withDeadline`.
 	const effective = withDeadline(signal, REQUEST_TIMEOUT_MS);
 
 	const body = new FormData();

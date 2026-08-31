@@ -500,9 +500,20 @@ input('go').disabled = true;
 // refuse, et la forme qu'il prefere, un `await` de premier niveau, ne compile
 // pas en iife. La fondre ici supprime la chaine au lieu de la faire tolerer.
 void (async () => {
-	await applyLanguage();
-	writeForm(await loadSettings());
-	input('go').disabled = false;
+	// `finally`, et c'est PORTEUR. Sans lui, un rejet d'`applyLanguage` sautait
+	// le reactivation du bouton et la seule action utile de la fenetre restait
+	// morte pour toujours : le panneau rouge s'affiche, et rien d'autre. Le
+	// risque est faible, `hostLanguage` et `resolveDict` avalent tout et il ne
+	// reste que `localizeDocument` qui touche le DOM, mais la consequence est
+	// TOTALE. `loadSettings` s'etait vu accorder son propre `catch` pour ce
+	// motif exact ; la serialisation de ce bloc avait defait cette protection.
+	try {
+		await applyLanguage();
+		writeForm(await loadSettings());
+	}
+	finally {
+		input('go').disabled = false;
+	}
 	await checkForUpdate();
 })();
 

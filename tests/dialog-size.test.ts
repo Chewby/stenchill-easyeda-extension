@@ -86,6 +86,41 @@ describe('the dialog size contract', () => {
 		expect(regle).toMatch(/height:\s*15px\s*;/);
 	});
 
+	/**
+	 * Le bouton Generate doit revenir QUOI QU'IL ARRIVE au demarrage.
+	 *
+	 * Il est desactive au parse pour qu'un stockage lent n'ecrase pas une
+	 * saisie. Le reactiver depuis un `finally` et non a la suite des `await`
+	 * est ce qui empeche un rejet d'`applyLanguage` de le condamner pour
+	 * toujours : le panneau rouge s'afficherait, et la seule action utile de la
+	 * fenetre serait morte.
+	 *
+	 * Garde TEXTUEL, et c'est une faiblesse assumee : `iframe-app.ts` appelle
+	 * `eda`, donc il n'est pas executable hors du client. C'est exactement ce
+	 * que l'extraction d'un `src/form.ts` de DOM pur rendrait testable pour de
+	 * bon. En attendant, mieux vaut ce garde que rien : la mutation qui retire
+	 * le `finally` ne fait rougir aucun autre test.
+	 */
+	it('re-enables the Generate button from a finally, never from a straight line', () => {
+		const sansCommentaires = IFRAME.replaceAll(/\/\/[^\n]*/g, '').replaceAll(/\/\*[\s\S]*?\*\//g, '');
+		// ANCRE sur le bloc de demarrage, entre la desactivation du bouton et la
+		// verification de version. Sans cette ancre, l'assertion matchait le
+		// `finally` de `run()`, qui reactive lui aussi le bouton : elle restait
+		// donc verte apres suppression de celui du demarrage. Vu ne PAS rougir
+		// a la mutation.
+		// `lastIndexOf` et NON `indexOf` : `input('go').disabled = true` apparait
+		// d'abord dans `run()`, bien avant le bloc de demarrage, et l'ancre
+		// prenait cette occurrence-la. La tranche couvrait alors la moitie du
+		// fichier et attrapait n'importe quel `finally`, donc elle restait verte
+		// apres suppression de celui du demarrage. Deuxieme redaction de ce
+		// garde, et deuxieme fois qu'il a fallu le muter pour s'en apercevoir.
+		const debut = sansCommentaires.lastIndexOf("input('go').disabled = true");
+		const fin = sansCommentaires.indexOf('checkForUpdate()', debut);
+		expect(debut, 'bloc de demarrage introuvable').toBeGreaterThan(-1);
+		expect(fin, 'fin du bloc de demarrage introuvable').toBeGreaterThan(debut);
+		expect(sansCommentaires.slice(debut, fin)).toMatch(/finally\s*\{/);
+	});
+
 	// Le point d'entree n'a PAS d'acces reseau, mesure le 2026-08-31 contre le
 	// client : la premiere ouverture apres une nouvelle version defilait, la
 	// seconde non, ce qui ne peut arriver que si c'est la page qui demande. Y

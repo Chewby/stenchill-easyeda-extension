@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, generateStencil } from '../src/api-client';
+import { ApiError, generateStencil, withDeadline } from '../src/api-client';
 import { DEFAULT_PARAMS } from '../src/params';
 
 function streamOf(text: string): ReadableStream<Uint8Array> {
@@ -201,5 +201,62 @@ describe('generateStencil', () => {
 			fetchImpl: fakeFetch('event: progress\ndata: pas du json\n\nevent: complete\ndata: {"stlPath":"abc.zip"}\n\n'),
 		});
 		expect(result.stlPath).toBe('abc.zip');
+	});
+});
+
+
+/**
+ * `withDeadline` est desormais la primitive PARTAGEE par les deux appels
+ * reseau du greffon. Sa branche interessante est celle qu'un runtime moderne
+ * n'emprunte jamais, donc elle pourrirait sans bruit : il faut retirer
+ * `AbortSignal.any` pour l'atteindre.
+ */
+describe('withDeadline', () => {
+	it('rend le seul plafond quand l appelant ne fournit pas de signal', () => {
+		const s = withDeadline(undefined, 50);
+		expect(s).toBeInstanceOf(AbortSignal);
+		expect(s.aborted).toBe(false);
+	});
+
+	it('compose les deux quand AbortSignal.any existe', () => {
+		const ctl = new AbortController();
+		const s = withDeadline(ctl.signal, 50_000);
+		expect(s).not.toBe(ctl.signal);
+		ctl.abort(new Error('stop'));
+		expect(s.aborted).toBe(true);
+	});
+
+	// SANS `AbortSignal.any`, les DEUX sources doivent encore declencher. La
+	// premiere redaction du repli rendait `signal ?? deadline`, donc elle
+	// JETAIT le plafond des qu'un signal etait fourni : le cas precis que le
+	// plafond existe pour couvrir redevenait une attente infinie.
+	it('sans AbortSignal.any, l annulation de l appelant traverse le relais', () => {
+		const vrai = AbortSignal.any;
+		(AbortSignal as unknown as { any?: unknown }).any = undefined;
+		try {
+			const ctl = new AbortController();
+			const s = withDeadline(ctl.signal, 50_000);
+			expect(s.aborted).toBe(false);
+			ctl.abort(new Error('stop'));
+			expect(s.aborted).toBe(true);
+		}
+		finally {
+			(AbortSignal as unknown as { any?: unknown }).any = vrai;
+		}
+	});
+
+	it('sans AbortSignal.any, le PLAFOND declenche aussi', async () => {
+		const vrai = AbortSignal.any;
+		(AbortSignal as unknown as { any?: unknown }).any = undefined;
+		try {
+			const ctl = new AbortController();
+			const s = withDeadline(ctl.signal, 1);
+			expect(s.aborted).toBe(false);
+			await new Promise(resolve => setTimeout(resolve, 30));
+			expect(s.aborted).toBe(true);
+		}
+		finally {
+			(AbortSignal as unknown as { any?: unknown }).any = vrai;
+		}
 	});
 });

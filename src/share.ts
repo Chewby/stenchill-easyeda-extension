@@ -107,10 +107,10 @@ export const SHARE_TIMEOUT_MS = 2 * 60 * 1000;
 export async function shareStencil(options: ShareOptions): Promise<string> {
 	const { zip, params, fetchImpl, baseUrl, apiKey, userAgent, signal } = options;
 
-	// Same composition as `generateStencil`, and the same fallback:
-	// `AbortSignal.any` requires Chromium >= 116, and we don't know the version
-	// the client embeds. With the fallback, the ceiling degrades instead of
-	// breaking sharing.
+	// Annulation de l'appelant ET plafond de delai : voir `withDeadline`, qui
+	// porte le pourquoi. Le commentaire d'ici disait « le plafond se DEGRADE »,
+	// ce qui decrivait la version d'avant : il ne se degrade plus, c'est tout
+	// le sens de ce correctif.
 	const effective = withDeadline(signal, SHARE_TIMEOUT_MS);
 
 	const body = new FormData();
