@@ -62,6 +62,30 @@ describe('the dialog size contract', () => {
 		expect(PAGE).toMatch(/footer \{[^}]*margin-top: auto/);
 	});
 
+	/**
+	 * La pastille d'aide doit rester RONDE.
+	 *
+	 * Elle fixe 15 x 15 et `border-radius: 50%`, mais la regle `button` du meme
+	 * document impose `padding: 6px 13px`. En border-box, 13px de chaque cote
+	 * font un plancher de largeur de 28px pour 15px de haut, et la pastille
+	 * sortait en ellipse. Un defaut purement visuel qu'aucun test de logique ne
+	 * pouvait voir, d'ou ce garde sur la feuille de style.
+	 */
+	it('keeps the help badge round', () => {
+		const brut = /\.info \{[^}]*\}/.exec(PAGE)?.[0] ?? '';
+		expect(brut, '.info introuvable').not.toBe('');
+		// Les COMMENTAIRES sont retires avant l'assertion. Sans cela le garde ne
+		// gardait rien : le commentaire de la regle cite « padding: 0 » en
+		// toutes lettres pour expliquer pourquoi il est la, donc l'assertion
+		// matchait la prose et restait verte apres suppression de la vraie
+		// declaration. Vu ne PAS rougir a la mutation, ce qui est la seule
+		// facon de s'en apercevoir.
+		const regle = brut.replaceAll(/\/\*[\s\S]*?\*\//g, '');
+		expect(regle).toMatch(/padding:\s*0\s*;/);
+		expect(regle).toMatch(/width:\s*15px\s*;/);
+		expect(regle).toMatch(/height:\s*15px\s*;/);
+	});
+
 	// Le point d'entree n'a PAS d'acces reseau, mesure le 2026-08-31 contre le
 	// client : la premiere ouverture apres une nouvelle version defilait, la
 	// seconde non, ce qui ne peut arriver que si c'est la page qui demande. Y

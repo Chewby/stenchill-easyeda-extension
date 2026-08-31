@@ -97,6 +97,14 @@
 		.info {
 			position: relative;
 			font-family: inherit;
+			/* `padding: 0` est PORTEUR, pas cosmetique : la regle `button` plus
+			   bas impose 6px 13px, et en border-box 13px de chaque cote font un
+			   plancher de largeur de 28px pour 15px de haut. La pastille sortait
+			   donc en ellipse etiree. La specificite de `.info` l'emporte sur
+			   `button` quel que soit l'ordre des regles, mais encore faut-il
+			   ecrire la declaration. */
+			padding: 0;
+			line-height: 1;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
