@@ -74,6 +74,47 @@ export async function resolveDict(
 	}
 }
 
+/**
+ * The locales stenchill.com serves. Anything else has no page to point at.
+ *
+ * The site speaks eighteen languages where this extension speaks two, so the
+ * link can be more precise than the interface around it: a reader whose
+ * EasyEDA is in German reads an English dialog, but there is no reason to send
+ * them to an English page when a German one exists.
+ */
+const SITE_LOCALES = new Set([
+	'en',
+	'fr',
+	'de',
+	'es',
+	'it',
+	'pt',
+	'zh',
+	'ja',
+	'ko',
+	'ru',
+	'pl',
+	'nl',
+	'cs',
+	'uk',
+	'ro',
+	'hi',
+	'sv',
+	'tr',
+]);
+
+/**
+ * The site locale to link to, from a host language.
+ *
+ * Matched on the PREFIX, `zh-Hans` and `pt-BR` being languages the host may
+ * answer and the site serves as `zh` and `pt`. Falls back to English, which
+ * the site always has.
+ */
+export function siteLocale(language: string | null | undefined): string {
+	const code = (language ?? '').toLowerCase().split('-')[0];
+	return SITE_LOCALES.has(code) ? code : 'en';
+}
+
 /** Elements whose text is code, never language. */
 const SKIPPED_PARENTS = new Set(['STYLE', 'SCRIPT', 'TITLE']);
 

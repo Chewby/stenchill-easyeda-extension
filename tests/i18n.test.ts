@@ -1,7 +1,7 @@
-import type { Dict } from '../src/i18n';
 // @vitest-environment happy-dom
+import type { Dict } from '../src/i18n';
 import { describe, expect, it } from 'vitest';
-import { format, localizeDocument, pickDict, resolveDict, translate } from '../src/i18n';
+import { format, localizeDocument, pickDict, resolveDict, siteLocale, translate } from '../src/i18n';
 
 const ZH: Dict = {
 	'Quit': '退出',
@@ -146,5 +146,32 @@ describe('localizeDocument', () => {
 		const root = page(before);
 		localizeDocument(root, {});
 		expect(root.innerHTML).toBe(before);
+	});
+});
+
+describe('siteLocale', () => {
+	/**
+	 * The site speaks eighteen languages, this extension speaks two. The link
+	 * can therefore be more precise than the dialog around it: a German reader
+	 * sees an English interface, but there is no reason to hand them an English
+	 * page when a German one exists.
+	 */
+	it('sends a reader to their own page when the site has one', () => {
+		expect(siteLocale('de')).toBe('de');
+		expect(siteLocale('fr')).toBe('fr');
+		expect(siteLocale('ja')).toBe('ja');
+	});
+
+	// The host answers `zh-Hans`, the site serves `zh`. Matching the whole
+	// string would silently send every Chinese reader to the English page.
+	it('matches on the prefix, the host answering regional codes', () => {
+		expect(siteLocale('zh-Hans')).toBe('zh');
+		expect(siteLocale('pt-BR')).toBe('pt');
+		expect(siteLocale('EN-GB')).toBe('en');
+	});
+
+	it('falls back to English for a language the site does not serve', () => {
+		for (const code of ['vi', 'th', 'ar', '', null, undefined])
+			expect(siteLocale(code)).toBe('en');
 	});
 });

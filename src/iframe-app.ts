@@ -13,7 +13,7 @@ import { API_KEY, ApiError, DEFAULT_BASE_URL, fetchLatestVersion, generateStenci
 import { DICTS } from './dicts';
 import { exportPasteGerbers } from './exporter';
 import { stencilFileName } from './filename';
-import { localizeDocument, resolveDict, translate } from './i18n';
+import { localizeDocument, resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
 import { clampParams, DEFAULT_PARAMS } from './params';
 import { shareStencil } from './share';
@@ -55,8 +55,13 @@ function t(text: string, ...args: ReadonlyArray<string | number>): string {
  * lesser evil than a dialog that could stay blank forever if the reveal never
  * ran. English is also what a failure leaves on screen, which is readable.
  */
+/** The site locale to link to, settled with the dictionary. */
+let locale = 'en';
+
 async function applyLanguage(): Promise<void> {
-	dict = await resolveDict(hostLanguage, DICTS);
+	const language = await hostLanguage();
+	dict = await resolveDict(() => language, DICTS);
+	locale = siteLocale(language);
 	localizeDocument(document, dict);
 }
 
@@ -462,7 +467,10 @@ async function checkForUpdate(): Promise<void> {
 	link.textContent = t('Download');
 	link.onclick = (event) => {
 		event.preventDefault();
-		openAndShow('https://github.com/Chewby/stenchill-easyeda-extension/releases');
+		// La page du SITE et non la page des releases : elle explique, elle
+		// porte le bouton de telechargement, et le greffon est un canal vers
+		// le site. Dans la langue du client quand le site la parle.
+		openAndShow(`https://www.stenchill.com/${locale}/easyeda-extension`);
 	};
 	el('update').style.display = 'block';
 }

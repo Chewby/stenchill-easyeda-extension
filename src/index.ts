@@ -7,7 +7,7 @@
  * `src/iframe-app.ts`.
  */
 import { DICTS } from './dicts';
-import { resolveDict, translate } from './i18n';
+import { resolveDict, siteLocale, translate } from './i18n';
 import { IFRAME_ID } from './iframe-id';
 import { VERSION } from './version';
 
@@ -39,10 +39,18 @@ export function openDialog(): void {
  */
 export function about(): void {
 	void (async () => {
-		const dict = await resolveDict(() => eda.sys_I18n.getCurrentLanguage(), DICTS);
-		eda.sys_Dialog.showInformationMessage(
-			`Stenchill ${VERSION}\nhttps://www.stenchill.com`,
-			translate(dict, 'About'),
-		);
+		const language = await eda.sys_I18n.getCurrentLanguage().catch(() => 'en');
+		const dict = await resolveDict(() => language, DICTS);
+		const body = [
+			`Stenchill ${VERSION}`,
+			'',
+			translate(dict, 'Turns the paste layers of your board into a stencil you can print on a normal FDM printer, with no manual Gerber export.'),
+			'',
+			// La page du site dans la langue du client : elle explique tout, et
+			// le greffon est un canal vers le site.
+			`https://www.stenchill.com/${siteLocale(language)}/easyeda-extension`,
+			translate(dict, 'MIT licensed. Source on GitHub.'),
+		].join('\n');
+		eda.sys_Dialog.showInformationMessage(body, translate(dict, 'About'));
 	})();
 }

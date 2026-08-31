@@ -108,7 +108,14 @@
 			text-align: center;
 		}
 
-		#update a { margin-left: 6px; }
+		/* Le lien heritait du bleu par defaut du navigateur, illisible sur le
+		   fond sombre du bandeau. Il prend la couleur d'accent, comme les autres
+		   liens de la page, et du gras pour se detacher du texte a cote. */
+		#update a {
+			margin-left: 8px;
+			color: var(--accent);
+			font-weight: 600;
+		}
 
 		#tip {
 			position: absolute;
