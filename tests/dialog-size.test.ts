@@ -114,7 +114,7 @@ describe('the dialog size contract', () => {
 		// fichier et attrapait n'importe quel `finally`, donc elle restait verte
 		// apres suppression de celui du demarrage. Deuxieme redaction de ce
 		// garde, et deuxieme fois qu'il a fallu le muter pour s'en apercevoir.
-		const debut = sansCommentaires.lastIndexOf("input('go').disabled = true");
+		const debut = sansCommentaires.lastIndexOf('input(\'go\').disabled = true');
 		const fin = sansCommentaires.indexOf('checkForUpdate()', debut);
 		expect(debut, 'bloc de demarrage introuvable').toBeGreaterThan(-1);
 		expect(fin, 'fin du bloc de demarrage introuvable').toBeGreaterThan(debut);

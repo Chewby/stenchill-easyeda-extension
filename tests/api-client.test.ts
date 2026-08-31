@@ -204,7 +204,6 @@ describe('generateStencil', () => {
 	});
 });
 
-
 /**
  * `withDeadline` est desormais la primitive PARTAGEE par les deux appels
  * reseau du greffon. Sa branche interessante est celle qu'un runtime moderne
