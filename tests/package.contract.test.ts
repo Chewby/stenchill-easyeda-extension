@@ -24,13 +24,16 @@ const SHIPPED = [
 	'CHANGELOG.md',
 	'LICENSE',
 	'README.md',
-	// The Chinese listing. The marketplace serves README.en.md to an
-	// English visitor and README.md otherwise, which is undocumented and
-	// was measured on 2026-09-02: eext-qrcode-generator ships a Chinese
-	// README.md, and its English detail page renders README.en.md. All
-	// eight official extensions surveyed ship both, and the reviewer who
-	// refused 26.8.1 reads the Chinese one first.
-	'README.en.md',
+	// The Chinese listing, best effort. The marketplace localises the
+	// README, which is documented nowhere: measured on 2026-09-02,
+	// eext-qrcode-generator ships a Chinese README.md plus an English
+	// README.en.md, and its English detail page renders the latter. Only
+	// the `.en` suffix is PROVEN. The eight official extensions all put
+	// Chinese in README.md itself, which would turn the GitHub landing page
+	// Chinese, so the locale suffix of `locales/zh-Hans.json` is used
+	// instead. If the platform ignores it, a Chinese reviewer falls back to
+	// the English README.md, which is what 26.8.1 already showed them.
+	'README.zh-Hans.md',
 	'dist/index.js',
 	'extension.json',
 	'iframe/app.js',
