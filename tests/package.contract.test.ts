@@ -24,6 +24,13 @@ const SHIPPED = [
 	'CHANGELOG.md',
 	'LICENSE',
 	'README.md',
+	// The Chinese listing. The marketplace serves README.en.md to an
+	// English visitor and README.md otherwise, which is undocumented and
+	// was measured on 2026-09-02: eext-qrcode-generator ships a Chinese
+	// README.md, and its English detail page renders README.en.md. All
+	// eight official extensions surveyed ship both, and the reviewer who
+	// refused 26.8.1 reads the Chinese one first.
+	'README.en.md',
 	'dist/index.js',
 	'extension.json',
 	'iframe/app.js',

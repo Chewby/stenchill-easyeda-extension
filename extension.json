@@ -13,9 +13,14 @@
 		"type": "git",
 		"url": "https://github.com/Chewby/stenchill-easyeda-extension"
 	},
-	"categories": "Other",
+	"categories": "PCB",
 	"keywords": [
-		"Tool"
+		"PCB",
+		"stencil",
+		"solder paste",
+		"3D printing",
+		"钢网",
+		"锡膏"
 	],
 	"images": {
 		"logo": "./images/logo.png",
