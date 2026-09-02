@@ -1,6 +1,7 @@
 /.git/
 /.husky/
 /.vscode/
+/.idea/
 /build/
 /config/
 /coverage/
