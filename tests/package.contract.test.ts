@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPackageFileList } from '../build/utils';
+import { getPackageFileList, packagedName } from '../build/utils';
 
 /**
  * What the published `.eext` contains, pinned.
@@ -24,16 +24,12 @@ const SHIPPED = [
 	'CHANGELOG.md',
 	'LICENSE',
 	'README.md',
-	// The Chinese listing, best effort. The marketplace localises the
-	// README, which is documented nowhere: measured on 2026-09-02,
-	// eext-qrcode-generator ships a Chinese README.md plus an English
-	// README.en.md, and its English detail page renders the latter. Only
-	// the `.en` suffix is PROVEN. The eight official extensions all put
-	// Chinese in README.md itself, which would turn the GitHub landing page
-	// Chinese, so the locale suffix of `locales/zh-Hans.json` is used
-	// instead. If the platform ignores it, a Chinese reviewer falls back to
-	// the English README.md, which is what 26.8.1 already showed them.
-	'README.zh-Hans.md',
+	// These two names are SWAPPED relative to the repository, by
+	// `packagedName`: the repository's English README.md ships as
+	// README.en.md, and its README.zh-Hans.md ships as README.md. The reason
+	// lives with the rename in build/utils.ts. This list describes the ZIP,
+	// so it is the swapped names that belong here.
+	'README.en.md',
 	'dist/index.js',
 	'extension.json',
 	'iframe/app.js',
@@ -60,7 +56,7 @@ const ROOT = new URL('..', import.meta.url).pathname;
 
 describe('the packaged file list', () => {
 	function built(): string[] {
-		return getPackageFileList(ROOT).map(f => f.replaceAll('\\', '/')).sort();
+		return getPackageFileList(ROOT).map(f => packagedName(f.replaceAll('\\', '/'))).sort();
 	}
 
 	/**

@@ -37,6 +37,39 @@ export function fixUuid(uuid?: string): string {
 }
 
 /**
+ * What a repository file is called INSIDE the package.
+ *
+ * The marketplace localises the listing, and the naming it reads is
+ * `README.md` for the default plus `README.en.md` for an English visitor.
+ * That is documented nowhere: it was measured on 2026-09-02, on
+ * `eext-qrcode-generator`, which ships a Chinese `README.md` and an English
+ * `README.en.md` and whose English detail page renders the latter. All eight
+ * official extensions surveyed that day do the same, and no extension
+ * anywhere uses a `zh-Hans` suffix.
+ *
+ * Following that convention in the REPOSITORY would turn the GitHub landing
+ * page Chinese, because GitHub always renders the root `README.md` and offers
+ * no way to point it elsewhere. The two names are therefore swapped here, at
+ * packaging time and nowhere else: the repository reads English first, the
+ * package carries the only layout the marketplace is known to read.
+ *
+ * The cost is that the package stops mirroring the repository file for file.
+ * The contract test pins the names as they are IN THE ZIP, so the guard still
+ * describes what ships.
+ */
+const PACKAGED_NAMES: Readonly<Record<string, string>> = {
+	'README.md': 'README.en.md',
+	'README.zh-Hans.md': 'README.md',
+};
+
+/**
+ * The name a repository file takes inside the package.
+ */
+export function packagedName(filepath: string): string {
+	return PACKAGED_NAMES[filepath] ?? filepath;
+}
+
+/**
  * Get the list of files to package
  */
 export function getPackageFileList(rootDir: string): Array<string> {
@@ -69,8 +102,16 @@ export async function packageExtension(rootDir: string, outputPath: string): Pro
 	const fileList = getPackageFileList(rootDir);
 
 	const zip = new JSZip();
+	const seen = new Set<string>();
 	for (const file of fileList) {
-		zip.file(file, fs.createReadStream(path.join(rootDir, file)));
+		const name = packagedName(file);
+		// A rename that lands on a name already taken would silently drop one of
+		// the two files, and the package would install and work without it.
+		if (seen.has(name)) {
+			throw new Error(`Two files would be packaged as ${name}`);
+		}
+		seen.add(name);
+		zip.file(name, fs.createReadStream(path.join(rootDir, file)));
 	}
 
 	const nodeStream = zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true, compression: 'DEFLATE', compressionOptions: { level: 9 } });
