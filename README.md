@@ -6,7 +6,7 @@ to assemble, no file to drag into a browser.
 
 ## Demo
 
-![Generating a stencil from a PCB inside EasyEDA Pro](https://www.stenchill.com/plugin/easyeda-demo.gif)
+![Generating a stencil from a PCB inside EasyEDA Pro](images/easyeda-demo.gif)
 
 *One pass, unedited: the help bubbles, the nozzle set to 0.2 mm, the five
 generation steps, and the archive saved.*
@@ -28,7 +28,7 @@ and hands you back an archive of STL and 3MF files, named after your project
 and the time. "View in 3D" opens the result on the site with the settings you
 used.
 
-![The archive saved, with the "View in 3D on stenchill.com" button](https://www.stenchill.com/plugin/easyeda-result.png)
+![The archive saved, with the "View in 3D on stenchill.com" button](images/easyeda-result.png)
 
 The defaults suit most boards: 0.4 mm thickness, no shrink, a 0.4 mm nozzle,
 close pads merged, unprintable grids filled in, and alignment shoulders on. A
@@ -40,7 +40,7 @@ Your settings are remembered between runs.
 
 Every row carries an `i` badge that opens a short explanation of that setting.
 
-![The Stenchill dialog, with the help bubble of a setting open](https://www.stenchill.com/plugin/easyeda-form.png)
+![The Stenchill dialog, with the help bubble of a setting open](images/easyeda-form.png)
 
 | Setting | Default | Range | What it does |
 |---|---|---|---|

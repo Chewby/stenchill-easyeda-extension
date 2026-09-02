@@ -29,6 +29,15 @@ const SHIPPED = [
 	'iframe/app.js',
 	'iframe/index.html',
 	'images/banner.jpg',
+	// The three images the README shows. They ship inside the package on
+	// purpose: the 26.8.1 submission was refused for having no demo image,
+	// and the marketplace ingests the images it finds in the `.eext` and
+	// rehosts them. Every published official extension references them
+	// relatively, none links to a remote URL, so this is the proven path
+	// and it is also the one that loads for a reviewer in China.
+	'images/easyeda-demo.gif',
+	'images/easyeda-form.png',
+	'images/easyeda-result.png',
 	'images/logo.png',
 	'images/stenchill.png',
 	'locales/en.json',
