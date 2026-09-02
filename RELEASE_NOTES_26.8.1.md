@@ -1,5 +1,10 @@
 # Stenchill for EasyEDA, v26.8.1
 
+![Generating a stencil from a PCB inside EasyEDA Pro](https://www.stenchill.com/plugin/easyeda-demo.gif)
+
+*One pass, unedited: the help bubbles, the nozzle set to 0.2 mm, the
+five generation steps, and the archive saved.*
+
 First release. Stenchill turns the paste layers of your board into a stencil you can print on a normal FDM printer, and this extension does it without ever leaving EasyEDA Pro. No manual Gerber export, no zip to assemble, no file to drag into a browser.
 
 Open a board, pick your settings, click once. The extension exports the paste and outline layers, sends them to stenchill.com, follows the generation live, and hands you back an archive of STL and 3MF files.
