@@ -4,6 +4,13 @@ Turns the paste layers of your board into a stencil you can print on a normal
 FDM printer, without ever leaving EasyEDA Pro. No manual Gerber export, no zip
 to assemble, no file to drag into a browser.
 
+## Demo
+
+![Generating a stencil from a PCB inside EasyEDA Pro](https://www.stenchill.com/plugin/easyeda-demo.gif)
+
+*One pass, unedited: the help bubbles, the nozzle set to 0.2 mm, the five
+generation steps, and the archive saved.*
+
 ## Installing it
 
 Download the `.eext` from the [latest release](https://github.com/Chewby/stenchill-easyeda-extension/releases/latest),
@@ -21,14 +28,19 @@ and hands you back an archive of STL and 3MF files, named after your project
 and the time. "View in 3D" opens the result on the site with the settings you
 used.
 
-Every setting has a help icon. The defaults suit most boards: 0.4 mm thickness,
-no shrink, a 0.4 mm nozzle, close pads merged, unprintable grids filled in, and
-alignment shoulders on. A 0.2 mm nozzle gives noticeably better results if your
-printer has one.
+![The archive saved, with the "View in 3D on stenchill.com" button](https://www.stenchill.com/plugin/easyeda-result.png)
+
+The defaults suit most boards: 0.4 mm thickness, no shrink, a 0.4 mm nozzle,
+close pads merged, unprintable grids filled in, and alignment shoulders on. A
+0.2 mm nozzle gives noticeably better results if your printer has one.
 
 Your settings are remembered between runs.
 
 ## Settings
+
+Every row carries an `i` badge that opens a short explanation of that setting.
+
+![The Stenchill dialog, with the help bubble of a setting open](https://www.stenchill.com/plugin/easyeda-form.png)
 
 | Setting | Default | Range | What it does |
 |---|---|---|---|
